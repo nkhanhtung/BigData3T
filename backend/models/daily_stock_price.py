@@ -15,5 +15,5 @@ class DailyStockPrice(Base):
     low_price = Column(Numeric(10,2), nullable=False)
     volumes = Column(Integer, nullable=False)
 
-    daily_stocks = relationship("Stock", back_populates="stock_dailies")
+    dailies_stock = relationship("Stock", back_populates="stock_dailies")
 
