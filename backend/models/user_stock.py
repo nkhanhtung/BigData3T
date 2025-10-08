@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, Float, ForeignKey, Numeric, String
 from sqlalchemy.orm import relationship
 from databases.postsql.database import Base
 
@@ -6,8 +6,8 @@ from databases.postsql.database import Base
 class UserStock(Base):
     __tablename__ = "users_stocks"
 
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
-    stock_id = Column(Integer, ForeignKey("stocks.stock_id", ondelete="CASCADE"), primary_key=True,)
+    user_id = Column(Integer, ForeignKey("users.user_id",onupdate="CASCADE", ondelete="RESTRICT"), primary_key=True)
+    stock_id = Column(String(3), ForeignKey("stocks.stock_id",onupdate="CASCADE", ondelete="RESTRICT"), primary_key=True,)
     quantity = Column(Integer, nullable=False)
     mean_price = Column(Numeric(10, 2), nullable=False)
 
