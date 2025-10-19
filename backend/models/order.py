@@ -1,14 +1,15 @@
 from sqlalchemy import Column, Integer, Text, Numeric, DateTime, String, ForeignKey, func
 from sqlalchemy.orm import relationship
 from databases.postsql.database import Base
-
+import sqlalchemy as sa
+import uuid
 
 class Order(Base):
     __tablename__ = "orders"
 
-    order_id = Column(Integer, primary_key=True, autoincrement=True)
+    order_id = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(Integer, ForeignKey("users.user_id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
-    stock_id = Column(Integer, ForeignKey("stocks.stock_id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
+    stock_symbol = Column(String(3), ForeignKey("stocks.stock_symbol", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
     order_type = Column(String(20), nullable=False)
 
     price = Column(Numeric(10, 2), nullable=False)
