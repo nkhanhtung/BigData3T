@@ -1,0 +1,262 @@
+
+services:
+  # --- 1. Zookeeper (cho Kafka) ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD-SHELL", "echo stat | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- 2. Kafka Broker ---
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy # Đảm bảo Zookeeper khởi động trước
+    ports:
+      - "9092:9092" # Cổng cho client bên ngoài Docker
+      - "29092:29092" # Cổng cho client bên trong Docker Compose network
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      # Cấu hình listeners cho phép kết nối cả từ bên trong và bên ngoài Docker
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092 # Thay localhost bằng IP server nếu deploy
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "kafka:29092"] # Kiểm tra broker sẵn sàng
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- 3. Kafka Topic Initializer ---
+  kafka-init-topics:
+    image: confluentinc/cp-kafka:7.5.0 # Sử dụng image Kafka để có sẵn kafka-topics.sh
+    container_name: kafka-init-topics
+    depends_on:
+      kafka:
+        condition: service_healthy # Đảm bảo Kafka broker sẵn sàng
+    volumes:
+    - /home/tungcutenhoem/Documents/ProjectBigData/BigData3T/scripts/init_kafka_topics.sh:/tmp/init_kafka_topics.sh
+    command: ["/bin/bash", "/tmp/init_kafka_topics.sh"] # Chạy script để tạo topics
+    environment:
+      KAFKA_BROKER_ADDRESS: kafka:29092 # Truyền vào script nếu nó dùng env var
+      KAFKA_REPLICATION_FACTOR: 1
+      KAFKA_PARTITIONS: 3
+
+  # --- 4. PostgreSQL Database ---
+  postgres:
+    image: postgres:15-alpine
+    hostname: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-neondb}
+      POSTGRES_USER: ${POSTGRES_USER:-neondb_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-npg_X3MpLju8nzxi}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Lưu trữ dữ liệu vào volume
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- 5. Redis Cache ---
+  redis:
+    image: redis:7-alpine
+    hostname: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data # Lưu trữ dữ liệu vào volume
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- 6. MongoDB Database ---
+  mongodb:
+    image: mongo:6
+    hostname: mongodb
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-trading_app_db}
+    volumes:
+      - mongodb_data:/data/db # Lưu trữ dữ liệu vào volume
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"] # Có thể cần thêm --username/--password
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  # --- 7.Flink Job Manager.
+
+  flink-base:
+    build:
+      context: ./flink # Giả sử Dockerfile nằm trong ./flink
+      dockerfile: Dockerfile
+    image: my-custom-flink:1.20.2 # Đặt tên cho image tùy chỉnh của bạn
+
+  flink-jobmanager:
+    image: my-custom-flink:1.20.2 # Sử dụng image tùy chỉnh của bạn
+    hostname: flink-jobmanager
+    container_name: flink-jobmanager
+    ports:
+      - "8081:8081"
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 1
+        jobmanager.memory.process.size: 8192m
+    command: /opt/flink/bin/jobmanager.sh start-foreground
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081 || exit 1"]
+      interval: 10s
+      retries: 20
+      start_period: 120s
+
+  flink-taskmanager:
+    image: my-custom-flink:1.20.2 # Sử dụng image tùy chỉnh của bạn
+    container_name: flink-taskmanager
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.memory.process.size: 1024m
+    command: taskmanager
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://flink-jobmanager:8081 || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 30s
+
+  flink-processor:
+    image: my-custom-flink:1.20.2 # Sử dụng image tùy chỉnh của bạn
+    hostname: flink-processor
+    container_name: flink-processor
+    depends_on:
+      flink-taskmanager:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC_ORDERS_RAW: orders_raw
+      KAFKA_TOPIC_PENDING_ORDERS: pending_orders
+      KAFKA_TOPIC_ORDER_STATUS_UPDATES: order_status_updates
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-neondb}
+      POSTGRES_USER: ${POSTGRES_USER:-neondb_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-npg_X3MpLju8nzxi}
+    command:
+      - /opt/flink/bin/flink
+      - run
+      - -m
+      - flink-jobmanager:8081
+      - -py
+      - /opt/flink-job/trading_processor.py
+      - --pyExecutable
+      - /usr/bin/python3
+    restart: always
+
+
+  # 10. FastAPI Backend (Ứng dụng của bạn) ---
+  backend-app:
+    build:
+      context: ./backend # Thư mục chứa Dockerfile của backend FastAPI
+      dockerfile: Dockerfile # Giả sử có Dockerfile trong thư mục backend
+    hostname: backend-app
+    container_name: backend-app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka: # Backend của bạn kết nối với Kafka Producer
+        condition: service_healthy
+      # flink-processor: # Backend không cần chờ Flink processor, Flink processor chỉ xử lý dữ liệu
+      #   condition: service_started
+    environment:
+      # Truyền các biến môi trường từ .env vào container
+      # Hoặc đặt các giá trị mặc định trực tiếp ở đây
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC_ORDERS_RAW: orders_raw
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-neondb}
+      POSTGRES_USER: ${POSTGRES_USER:-neondb_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-npg_X3MpLju8nzxi}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_USERNAME: ${MONGODB_USERNAME:-user} # Lấy từ .env hoặc mặc định
+      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-password}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-trading_app_db}
+      # SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES cũng nên được truyền vào
+      SECRET_KEY: ${SECRET_KEY:-maiminhtung20042005@}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    volumes:
+      - ./backend:/app 
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+  
+  persistence-service:
+    build:
+      context: .
+      dockerfile: persistence-service/Dockerfile
+    container_name: persistence-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      # Truyền các biến môi trường cần thiết cho service
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC_ORDER_UPDATES: order_updates
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-neondb}
+      POSTGRES_USER: ${POSTGRES_USER:-neondb_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-npg_X3MpLju8nzxi}
+    volumes:
+      - ./persistence-service:/app # Mount code để dễ dev
+      - ./backend:/app/backend # Mount code backend để có thể import
+    restart: on-failure
+
+# --- Volumes để lưu trữ dữ liệu bền vững ---
+volumes:
+  postgres_data:
+  redis_data:
+  mongodb_data:
+  
