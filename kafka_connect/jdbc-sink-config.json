@@ -1,0 +1,10 @@
+{
+  "connector": "jdbc",
+  "url": "jdbc:postgresql://postgres:5432/neondb",
+  "table-name": "order_history",
+  "username": "neondb_owner",
+  "password": "npg_X3MpLju8nzxi",
+  "sink.buffer-flush.interval": "1s",
+  "sink.buffer-flush.max-rows": "100",
+  "sink.max-retries": "3"
+}
