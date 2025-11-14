@@ -18,8 +18,7 @@ from cores.kafka_client import send_message
 from cores.config import settings_kafka 
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/orders", tags=["Trading"])
-
+router = APIRouter()
 
 @router.post("/place", response_model=OrderInDB, status_code=status.HTTP_201_CREATED)
 async def place_order(order_data: OrderCreate, db: AsyncSession = Depends(get_async_session)):
