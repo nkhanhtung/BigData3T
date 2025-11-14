@@ -4,15 +4,12 @@ WORKDIR /app
 
 COPY persistence-service/requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend ./backend
 
-COPY backend/models ./backend/models
-COPY backend/cores ./backend/cores
-COPY backend/databases ./backend/databases
-COPY backend/schemas ./backend/schemas
+RUN pip install -r requirements.txt
 
 COPY persistence-service/persistence_service.py .
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/backend
 
 CMD ["python", "persistence_service.py"]

@@ -6,7 +6,7 @@ import uuid
 
 
 class OrderHistory(Base):
-    __tablename__ = "order_history"
+    __tablename__ = "order_histories"
 
     history_id = Column(Integer, primary_key=True, autoincrement=True)  # SERIAL
     order_id = Column(sa.UUID(as_uuid=True),ForeignKey("orders.order_id", onupdate="CASCADE", ondelete="RESTRICT"),nullable=False)
