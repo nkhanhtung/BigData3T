@@ -71,6 +71,7 @@ async def load_multiple_csv(folder_path: str, file_list: list):
 
 if __name__ == "__main__":
     folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_daily/Banking"
+    
 
     files = [
         "ACB.csv", "BID.csv", "CTG.csv", "HDB.csv", "MBB.csv", 
