@@ -16,11 +16,11 @@ async def get_ohlc_data(stock_id: int, session: AsyncSession = Depends(get_async
         stmt = (
             select(
                 DailyStockPrice.date,
-                DailyStockPrice.open_price.label("open"),
-                DailyStockPrice.high_price.label("high"),
-                DailyStockPrice.low_price.label("low"),
-                DailyStockPrice.close_price.label("close"),
-                DailyStockPrice.volumes.label("volume"),
+                DailyStockPrice.open_price.label("open_price"),
+                DailyStockPrice.high_price.label("high_price"),
+                DailyStockPrice.low_price.label("low_price"),
+                DailyStockPrice.close_price.label("close_price"),
+                DailyStockPrice.volumes.label("volumes"),
             )
             .where(DailyStockPrice.stock_id == stock_id)
             .order_by(DailyStockPrice.date)
