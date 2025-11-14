@@ -8,7 +8,6 @@ class DailyStockPrice(Base):
 
     stock_id = Column(Integer, ForeignKey("stocks.stock_id", ondelete="CASCADE"), primary_key=True)
     date = Column(Date, nullable=False)  
-    current_price = Column(Numeric(10,2), nullable=False)
     open_price = Column(Numeric(10,2), nullable=False)
     close_price = Column(Numeric(10,2), nullable=False)
     high_price = Column(Numeric(10,2), nullable=False)

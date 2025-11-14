@@ -4,6 +4,7 @@ import json
 import asyncio
 import uuid
 from datetime import datetime
+from dateutil import parser
 from decimal import Decimal
 
 from aiokafka import AIOKafkaConsumer
@@ -31,23 +32,28 @@ async def process_event(event: dict, session: AsyncSession):
             return
         order_id = uuid.UUID(order_id_str)
         history_record = OrderHistory(
-            order_id=order_id, status_at_event=event.get('status_at_event'),
+            order_id=order_id, 
+            status_at_event=event.get('status_at_event'),
             filled_quantity_at_event=event.get('filled_quantity_at_event'),
             filled_price_avg_at_event=Decimal(str(event.get('filled_price_avg_at_event', '0.0'))),
-            event_timestamp=datetime.fromisoformat(event.get('event_timestamp')),
+            event_timestamp=parser.isoparse(event.get('event_timestamp')),
             event_details=event.get('event_details')
         )
         session.add(history_record)
-        stmt_select = select(Order.original_quantity).where(Order.order_id == order_id)
+        
+        stmt_select = select(Order.quantity).where(Order.order_id == order_id)
         result = await session.execute(stmt_select)
-        original_quantity = result.scalar_one_or_none()
-        if original_quantity is not None:
+        quantity = result.scalar_one_or_none()
+        if quantity is not None:
             filled_quantity = event.get('filled_quantity_at_event', 0)
-            remaining_quantity = original_quantity - filled_quantity
+            remaining_quantity = quantity - filled_quantity
+
             stmt_update = update(Order).where(Order.order_id == order_id).values(
-                current_status=event.get('status_at_event'), filled_quantity=filled_quantity,
-                avg_filled_price=Decimal(str(event.get('filled_price_avg_at_event', '0.0'))),
-                remaining_quantity=remaining_quantity, updated_at=datetime.now()
+                status=event.get('status_at_event'), 
+                filled_quantity=filled_quantity,
+                filled_price_avg=Decimal(str(event.get('filled_price_avg_at_event', '0.0'))),
+                quantity=remaining_quantity, 
+                last_updated_timestamp=parser.isoparse(event.get('event_timestamp')),
             )
             await session.execute(stmt_update)
         await session.commit()
