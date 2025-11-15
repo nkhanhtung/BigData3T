@@ -37,7 +37,13 @@ class PendingOrderProcessFunction(KeyedProcessFunction):
         order_type = order_to_match.order_type.upper()
         own_state = self.buy_order_state if order_type == "BUY" else self.sell_order_state
         opposite_state = self.sell_order_state if order_type == "BUY" else self.buy_order_state
-        opposite_orders = sorted(list(opposite_state.get()), key=lambda o: o.price, reverse=(order_type == "SELL"))
+
+        # Lấy danh sách lệnh đối phương, sort theo giá
+        opposite_orders = sorted(
+            list(opposite_state.get()), 
+            key=lambda o: o.price, 
+            reverse=(order_type == "SELL")
+        )
         remaining_quantity = order_to_match.quantity
         remaining_opposite_orders = []
 
@@ -46,57 +52,62 @@ class PendingOrderProcessFunction(KeyedProcessFunction):
                 remaining_opposite_orders.append(opp_order)
                 continue
 
+            # Kiểm tra match
             is_match = (order_type == "BUY" and order_to_match.price >= opp_order.price) or \
-                       (order_type == "SELL" and order_to_match.price <= opp_order.price)
+                    (order_type == "SELL" and order_to_match.price <= opp_order.price)
 
             if is_match:
                 matched_qty = min(remaining_quantity, opp_order.quantity)
                 match_price = opp_order.price
 
+                # Cập nhật lệnh đối phương
                 opp_order_data = opp_order.as_dict()
                 opp_order_data['total_filled_quantity'] += matched_qty
                 opp_order_data['total_filled_value'] += matched_qty * match_price
-                status_opp = 'FILLED' if opp_order.quantity == matched_qty else 'PARTIALLY_FILLED'
+                status_opp = 'FILLED' if opp_order_data['quantity'] == opp_order_data['total_filled_quantity'] else 'PARTIALLY_FILLED'
+                yield (order_update_tag, self._create_history_event(Row(**opp_order_data), status_opp,
+                    f"Matched {matched_qty} shares with {order_to_match.order_id}"))
 
-                yield (order_update_tag, self._create_history_event(Row(**opp_order_data), status_opp, f"Matched {matched_qty} shares with {order_to_match.order_id}"))
-
-
+                # Cập nhật lệnh mới (order_to_match)
                 order_to_match_data = order_to_match.as_dict()
                 order_to_match_data['total_filled_quantity'] += matched_qty
                 order_to_match_data['total_filled_value'] += matched_qty * match_price
-                order_to_match = Row(**order_to_match_data)
-                remaining_quantity -= matched_qty
+                status_own = 'FILLED' if remaining_quantity - matched_qty == 0 else 'PARTIALLY_FILLED'
+                yield (order_update_tag, self._create_history_event(Row(**order_to_match_data), status_own,
+                    f"Matched {matched_qty} shares with {opp_order.order_id}"))
 
-
+                # Tạo trade record
                 buy_order = order_to_match if order_type == "BUY" else opp_order
                 sell_order = opp_order if order_type == "BUY" else order_to_match
                 yield Row(
-                    trade_id=str(uuid.uuid4()), stock_symbol=buy_order.stock_symbol,
-                    buy_order_id=str(buy_order.order_id), sell_order_id=str(sell_order.order_id),
-                    buy_user_id=str(buy_order.user_id), sell_user_id=str(sell_order.user_id),
-                    matched_price=float(match_price), matched_quantity=int(matched_qty),
+                    trade_id=str(uuid.uuid4()),
+                    stock_symbol=buy_order.stock_symbol,
+                    buy_order_id=str(buy_order.order_id),
+                    sell_order_id=str(sell_order.order_id),
+                    buy_user_id=str(buy_order.user_id),
+                    sell_user_id=str(sell_order.user_id),
+                    matched_price=float(match_price),
+                    matched_quantity=int(matched_qty),
                     trade_timestamp=datetime.now()
                 )
 
+                # Cập nhật remaining
+                remaining_quantity -= matched_qty
                 if opp_order.quantity > matched_qty:
                     opp_order_data['quantity'] -= matched_qty
                     remaining_opposite_orders.append(Row(**opp_order_data))
             else:
                 remaining_opposite_orders.append(opp_order)
-        
 
-        if order_to_match.total_filled_quantity > 0:
-            status_own = 'FILLED' if remaining_quantity == 0 else 'PARTIALLY_FILLED'
-
-            yield (order_update_tag, self._create_history_event(order_to_match, status_own, "Matching process finished"))
-
-
+        # Nếu còn quantity chưa khớp, lưu vào state
         if remaining_quantity > 0:
-            order_data = order_to_match.as_dict()
-            order_data['quantity'] = remaining_quantity
-            own_state.add(Row(**order_data))
-        
+            order_to_match_data = order_to_match.as_dict()
+            order_to_match_data['quantity'] = remaining_quantity
+            own_state.add(Row(**order_to_match_data))
+
+        # Cập nhật lại state đối phương
         opposite_state.update(remaining_opposite_orders)
+
 
     def process_element(self, value, ctx: RuntimeContext):
         action = value.action_type.upper()
