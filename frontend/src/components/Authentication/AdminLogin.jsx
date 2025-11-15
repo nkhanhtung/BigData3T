@@ -3,10 +3,12 @@ import './OverlayPanel.css'
 import './UserLogin.css'
 import axios from 'axios';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminLogin() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate();
 
     const handleAdminLogin = async (e) => {
         e.preventDefault();
@@ -21,6 +23,7 @@ export default function AdminLogin() {
             // LƯU LẠI TOKEN
             sessionStorage.setItem('admin_token', res.data.access_token);
             alert('Đăng nhập vai trò admin thành công!');
+            navigate('/homepage');
             console.log(res.data);
         } catch (err) {
             console.error(err);
