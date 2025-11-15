@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Union
-from jose import JWTError, jwt
+from jose import JWTError, jwt, ExpiredSignatureError
 from passlib.context import CryptContext
 from cores.config import settings
 from fastapi import Depends, HTTPException, status
@@ -37,9 +37,9 @@ def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except jwt.ExpiredSignatureError:
+    except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.InvalidTokenError:
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def verify_access_token(token: str) -> dict:
@@ -75,5 +75,3 @@ def get_user_current(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=401, detail="Token expired or Invalid")
 
     return user_email
-    
-

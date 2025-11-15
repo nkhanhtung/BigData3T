@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,6 +10,7 @@ from cores.redis_client import get_redis_client
 from models.user import User
 from jose import JWTError 
 import aioredis
+from sqlalchemy.future import select
 
 router = APIRouter()
 
@@ -39,7 +39,7 @@ async def register_user(user: UserCreate, db: AsyncSession = Depends(get_async_s
 @router.post("/login", response_model=UserLogin)
 async def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_async_session),redis_client: aioredis.Redis = Depends(get_redis_client)):
     result = await db.execute(
-        User.__table__.select().where(User.user_email == form_data.username)
+        select(User).where(User.user_email == form_data.username)
     )
     user = result.scalar_one_or_none()
 
@@ -72,7 +72,7 @@ async def logout_user(token: str = Depends(oauth2_scheme),
         if not user_email:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         
-        await redis_client.delete(token)
+        # await redis_client.delete(token)
         await redis_client.delete(f"user:{user_email}:token")
 
         return {"message" : "Logout successfully"}
