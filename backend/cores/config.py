@@ -13,11 +13,11 @@ settings = Settings()
 class SettingsKafka(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:29092") 
     KAFKA_TOPIC_ORDERS_RAW: str = "orders_raw"
-    KAFKA_TOPIC_PENDING_ORDERS: str = "pending_orders"
+    #KAFKA_TOPIC_PENDING_ORDERS: str = "pending_orders"
     KAFKA_TOPIC_MATCHED_ORDERS: str = "matched_orders"
     KAFKA_TOPIC_ORDER_COMMANDS: str = "order_commands" 
-    KAFKA_TOPIC_ORDER_STATUS_UPDATES: str = "order_status_updates"
-    KAFKA_TOPIC_MARKET_DATA: str = "market_data" 
+    #KAFKA_TOPIC_ORDER_STATUS_UPDATES: str = "order_status_updates"
+    #KAFKA_TOPIC_MARKET_DATA: str = "market_data" 
 
     class Config:
         env_file = ".env"
