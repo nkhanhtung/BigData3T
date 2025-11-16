@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Numeric, Date, ForeignKey
+from sqlalchemy import Column, String, Integer, Numeric, Date, ForeignKey
 from databases.postsql.database import Base
 from sqlalchemy.orm import relationship
 
@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 class DailyStockPrice(Base):
     __tablename__ = "daily_stocks_prices"
 
-    stock_id = Column(Integer, ForeignKey("stocks.stock_id", ondelete="CASCADE"), primary_key=True)
+    stock_symbol = Column(String(3), ForeignKey("stocks.stock_symbol", ondelete="CASCADE"),primary_key=True)
     date = Column(Date, nullable=False)  
     open_price = Column(Numeric(10,2), nullable=False)
     close_price = Column(Numeric(10,2), nullable=False)
