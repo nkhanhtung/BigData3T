@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/" element={<UserLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route
-          path="/homepage"
+          path="/homepage/*"
           element={
             <PrivateRoute>
               <HomePage />
