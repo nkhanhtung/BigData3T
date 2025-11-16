@@ -7,8 +7,8 @@ from models.daily_stock_price import DailyStockPrice  # import model bạn đị
 
 router = APIRouter()
 
-@router.get("/ohlcv/{stock_id}")
-async def get_ohlc_data(stock_id: int, session: AsyncSession = Depends(get_async_session)):
+@router.get("/ohlcv/{stock_symbol}")
+async def get_ohlc_data(stock_symbol: str, session: AsyncSession = Depends(get_async_session)):
     """
     Lấy dữ liệu OHLC của 1 cổ phiếu từ PostgreSQL để hiển thị biểu đồ nến.
     """
@@ -22,7 +22,7 @@ async def get_ohlc_data(stock_id: int, session: AsyncSession = Depends(get_async
                 DailyStockPrice.close_price.label("close_price"),
                 DailyStockPrice.volumes.label("volumes"),
             )
-            .where(DailyStockPrice.stock_id == stock_id)
+            .where(DailyStockPrice.stock_symbol == stock_symbol)
             .order_by(DailyStockPrice.date)
         )
 
@@ -30,7 +30,7 @@ async def get_ohlc_data(stock_id: int, session: AsyncSession = Depends(get_async
         rows = result.mappings().all()
 
         if not rows:
-            raise HTTPException(status_code=404, detail=f"No OHLC data found for stock_id={stock_id}")
+            raise HTTPException(status_code=404, detail=f"No OHLC data found for stock_id={stock_symbol}")
 
         return {"ohlc": [dict(row) for row in rows]}
 
