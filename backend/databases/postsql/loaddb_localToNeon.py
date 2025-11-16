@@ -1,81 +1,98 @@
 import asyncio
 import pandas as pd
-from sqlalchemy import Table, Column, Integer, String, Float, Date, MetaData, insert, select, Numeric
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy import Table, Column, Integer, Numeric, Date, MetaData, PrimaryKeyConstraint
+from sqlalchemy import (
+    Table, Column, String, Numeric, Integer, Date,
+    MetaData, insert, select, PrimaryKeyConstraint
+)
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from datetime import datetime
 
-DATABASE_URL = "postgresql+asyncpg://neondb_owner:npg_X3MpLju8nzxi@ep-lingering-pond-a1q4x3j5-pooler.ap-southeast-1.aws.neon.tech:5432/neondb"
+DATABASE_URL = (
+    "postgresql+asyncpg://neondb_owner:npg_X3MpLju8nzxi"
+    "@ep-lingering-pond-a1q4x3j5-pooler.ap-southeast-1.aws.neon.tech:5432/neondb"
+)
 
-# Kết nối async engine
+# Create async engine
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-# Khởi tạo metadata
+# Metadata
 metadata = MetaData()
 
-# Định nghĩa table trực tiếp (không dùng ORM)
+# ================================
+# DEFINE TABLE - NO stock_id
+# ================================
 daily_stock_table = Table(
     "daily_stocks_prices",
     metadata,
-    Column("stock_id", Integer, nullable=False, primary_key=True),
+    Column("stock_symbol", String(3), nullable=False),
     Column("date", Date, nullable=False),
-    Column("open_price", Numeric(10,2), nullable=False),
-    Column("close_price", Numeric(10,2), nullable=False),
-    Column("high_price", Numeric(10,2), nullable=False),
-    Column("low_price", Numeric(10,2), nullable=False),
+    Column("open_price", Numeric(10, 2), nullable=False),
+    Column("close_price", Numeric(10, 2), nullable=False),
+    Column("high_price", Numeric(10, 2), nullable=False),
+    Column("low_price", Numeric(10, 2), nullable=False),
     Column("volumes", Integer, nullable=False),
-    PrimaryKeyConstraint("stock_id", "date") 
+
+    PrimaryKeyConstraint("stock_symbol", "date")
 )
 
-async def load_csv(file_path: str, stock_id: int):
+
+# ================================
+# LOAD ONE CSV
+# ================================
+async def load_csv(file_path: str, stock_symbol: str):
     df = pd.read_csv(file_path)
 
     async with async_session() as session:
         async with session.begin():
             for _, row in df.iterrows():
-                # Check duplicate (stock_id + date)
-                row_date = datetime.strptime(row['date'], "%Y-%m-%d").date()
+
+                row_date = datetime.strptime(row["date"], "%Y-%m-%d").date()
+
+                # Check duplicate
                 stmt_check = select(daily_stock_table).where(
-                    daily_stock_table.c.stock_id == stock_id,
+                    daily_stock_table.c.stock_symbol == stock_symbol,
                     daily_stock_table.c.date == row_date
                 )
                 result = await session.execute(stmt_check)
-                existing = result.first()
-                if existing:
+                if result.first():
                     continue
 
+                # Insert row
                 stmt_insert = insert(daily_stock_table).values(
-                    stock_id=stock_id,
+                    stock_symbol=stock_symbol,
                     date=row_date,
-                    open_price=row['open'],
-                    high_price=row['high'],
-                    low_price=row['low'],
-                    close_price=row['close'],
-                    volumes=row['volume']
+                    open_price=row["open"],
+                    high_price=row["high"],
+                    low_price=row["low"],
+                    close_price=row["close"],
+                    volumes=row["volume"]
                 )
                 await session.execute(stmt_insert)
 
         await session.commit()
-    print(f"✅ Loaded CSV {file_path} with stock_id={stock_id}")
+
+    print(f"✅ Loaded CSV {file_path} (symbol={stock_symbol})")
 
 
+# ================================
+# LOAD MULTIPLE CSVs
+# ================================
 async def load_multiple_csv(folder_path: str, file_list: list):
-    stock_id = 2  # bắt đầu từ 2
     for f in file_list:
+        stock_symbol = f.replace(".csv", "").upper()
         file_path = f"{folder_path}/{f}"
-        await load_csv(file_path, stock_id)
-        stock_id += 1
+        await load_csv(file_path, stock_symbol)
 
 
+# ================================
+# MAIN
+# ================================
 if __name__ == "__main__":
-    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_daily/Banking"
-    
+    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_daily/Securities"
 
     files = [
-        "ACB.csv", "BID.csv", "CTG.csv", "HDB.csv", "MBB.csv", 
-        "SHB.csv", "STB.csv", "TCB.csv", "VCB.csv", "VPB.csv"
+        "FTS.csv", "HCM.csv","SHS.csv" ,"SSI.csv" , "VCI.csv" , "VND.csv"
     ]
 
     asyncio.run(load_multiple_csv(folder, files))
