@@ -21,6 +21,8 @@ class SettingsKafka(BaseSettings):
     KAFKA_TOPIC_PRICE_ALERTS: str = "price_alerts"
     KAFKA_TOPIC_VOLUME_ALERTS: str = "volume_alerts"
     KAFKA_TOPIC_INDICATOR_ALERTS: str = "indicator_alerts"
+    KAFKA_TOPIC_OHLC_VISUALIZATION: str = "ohlc_visualization"
+
 
     class Config:
         env_file = ".env"
@@ -71,10 +73,12 @@ class SettingsSpark(BaseSettings):
     SPARK_APP_NAME: str = "TradingAlerts"
     THREAD_SOLD: int = 4              
     BATCH_DURATION_SEC: int = 60
+    WATERMARK_DELAY_SEC: int = 10
 
     # Threshold cho alert
     VOLUME_THRESHOLD: int = 1000          # tổng lượng giao dịch / window
-    PRICE_MOVE_THRESHOLD: float = 5.0     # % biến động giá để cảnh báo
+    PRICE_MOVE_THRESHOLD: float = 1.0     # % biến động giá để cảnh báo
+
 
     class Config:
         env_file = ".env"
