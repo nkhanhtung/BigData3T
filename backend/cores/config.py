@@ -18,12 +18,12 @@ class SettingsKafka(BaseSettings):
     KAFKA_TOPIC_ORDER_COMMANDS: str = "order_commands" 
     #KAFKA_TOPIC_ORDER_STATUS_UPDATES: str = "order_status_updates"
     #KAFKA_TOPIC_MARKET_DATA: str = "market_data" 
+    KAFKA_TOPIC_PRICE_ALERTS: str = "price_alerts"
+    KAFKA_TOPIC_VOLUME_ALERTS: str = "volume_alerts"
 
     class Config:
         env_file = ".env"
         case_sensitive = True
-
-settings_kafka = SettingsKafka()
 
 class SettingsRedis(BaseSettings):
     model_config = SettingsConfigDict(
@@ -43,7 +43,6 @@ class SettingsRedis(BaseSettings):
             return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
-settings_redis = SettingsRedis()
 
 class SettingsMongoDB(BaseSettings):
     model_config = SettingsConfigDict(
@@ -67,4 +66,20 @@ class SettingsMongoDB(BaseSettings):
             return f"mongodb://{self.MONGODB_USERNAME}:{self.MONGODB_PASSWORD}@{self.MONGODB_HOST}:{self.MONGODB_PORT}/{self.MONGODB_DATABASE}"
         return f"mongodb://{self.MONGODB_HOST}:{self.MONGODB_PORT}/{self.MONGODB_DATABASE}"
 
+class SettingsSpark(BaseSettings):
+    SPARK_APP_NAME: str = "TradingAlerts"
+    THREAD_SOLD: int = 4              
+    BATCH_DURATION_SEC: int = 60
+
+    # Threshold cho alert
+    VOLUME_THRESHOLD: int = 1000          # tổng lượng giao dịch / window
+    PRICE_MOVE_THRESHOLD: float = 5.0     # % biến động giá để cảnh báo
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+settings_spark = SettingsSpark()
+settings_redis = SettingsRedis()
 settings_mongodb = SettingsMongoDB()
+settings_kafka = SettingsKafka()
