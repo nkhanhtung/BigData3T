@@ -113,3 +113,25 @@ async def stream_indicator_alerts(websocket: WebSocket):
     finally:
         await consumer.stop()
         logger.info("Kafka consumer stopped: indicator_alerts")
+
+
+# ================= consumer volume_alert for realtime =================
+async def stream_candlestick_ohlc(websocket: WebSocket):
+    await websocket.accept()
+    logger.info("WebSocket connected: candlestick_ohlc")
+
+    consumer = AIOKafkaConsumer(
+        settings_kafka.KAFKA_TOPIC_OHLC_VISUALIZATION,
+        bootstrap_servers=settings_kafka.KAFKA_BOOTSTRAP_SERVERS,
+        value_deserializer=lambda m: json.loads(m.decode("utf-8"))
+    )
+    await consumer.start()
+    try:
+        async for msg in consumer:
+            await websocket.send_json(msg.value)
+            logger.info(f"Sent ohlc visualization to WebSocket: {msg.value}")
+    except Exception as e:  
+        logger.warning(f"WebSocket disconnected: {e}")
+    finally:
+        await consumer.stop()
+        logger.info("Kafka consumer stopped: ohlc visualization")
