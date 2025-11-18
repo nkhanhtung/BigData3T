@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket
-from realtime.realtime_trading import stream_matched_orders, stream_price_alerts, stream_volume_alerts, stream_indicator_alerts
+from realtime.realtime_trading import stream_matched_orders, stream_price_alerts, stream_volume_alerts, stream_indicator_alerts, stream_candlestick_ohlc
 
 router = APIRouter()
 
@@ -20,3 +20,7 @@ async def matched_volume_alerts(websocket: WebSocket):
 @router.websocket("/ws/indicator-alerts")
 async def matched_indicator_alerts(websocket: WebSocket):
     await stream_indicator_alerts(websocket)
+
+@router.websocket("/ws/candlestick-ohlc")
+async def matched_candlestick_ohlc(websocket: WebSocket):
+    await stream_candlestick_ohlc(websocket)
