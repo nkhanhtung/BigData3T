@@ -89,10 +89,10 @@ async def load_multiple_csv(folder_path: str, file_list: list):
 # MAIN
 # ================================
 if __name__ == "__main__":
-    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_daily/Securities"
+    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_daily/Banking"
 
     files = [
-        "FTS.csv", "HCM.csv","SHS.csv" ,"SSI.csv" , "VCI.csv" , "VND.csv"
+     "ACB.csv"  ,"BID.csv"  ,"CTG.csv"  ,"HDB.csv",  "MBB.csv" , "SHB.csv"  ,"STB.csv"  ,"TCB.csv" , "VCB.csv"  ,"VPB.csv"
     ]
 
     asyncio.run(load_multiple_csv(folder, files))
