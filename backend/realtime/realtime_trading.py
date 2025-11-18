@@ -91,3 +91,25 @@ async def stream_volume_alerts(websocket: WebSocket):
     finally:
         await consumer.stop()
         logger.info("Kafka consumer stopped: volume_alerts")
+
+
+# ================= consumer indicator_alert for realtime =================
+async def stream_indicator_alerts(websocket: WebSocket):
+    await websocket.accept()
+    logger.info("WebSocket connected: indicator_alerts")
+
+    consumer = AIOKafkaConsumer(
+        settings_kafka.KAFKA_TOPIC_INDICATOR_ALERTS,
+        bootstrap_servers=settings_kafka.KAFKA_BOOTSTRAP_SERVERS,
+        value_deserializer=lambda m: json.loads(m.decode("utf-8"))
+    )
+    await consumer.start()
+    try:
+        async for msg in consumer:
+            await websocket.send_json(msg.value)
+            logger.info(f"Sent indicator alert to WebSocket: {msg.value}")
+    except Exception as e:
+        logger.warning(f"WebSocket disconnected: {e}")
+    finally:
+        await consumer.stop()
+        logger.info("Kafka consumer stopped: indicator_alerts")

@@ -20,6 +20,7 @@ class SettingsKafka(BaseSettings):
     #KAFKA_TOPIC_MARKET_DATA: str = "market_data" 
     KAFKA_TOPIC_PRICE_ALERTS: str = "price_alerts"
     KAFKA_TOPIC_VOLUME_ALERTS: str = "volume_alerts"
+    KAFKA_TOPIC_INDICATOR_ALERTS: str = "indicator_alerts"
 
     class Config:
         env_file = ".env"
