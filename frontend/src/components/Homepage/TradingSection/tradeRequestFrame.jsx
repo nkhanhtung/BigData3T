@@ -1,10 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import axios from "axios";
+import "./tradeRequestFrame.css";
 
 const TradingForm = () => {
     const [stocks, setStocks] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredStocks, setFilteredStocks] = useState([]);
     const [selectedStock, setSelectedStock] = useState(null);
+
+    const [orderType, setOrderType] = useState("BUY");
+    const [price, setPrice] = useState("");
+    const [volume, setVolume] = useState("");
+
+    const [showDropdown, setShowDropdown] = useState(false);
+    const wrapperRef = useRef();
+
+    // Click outside -> close dropdown
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Lấy danh sách cổ phiếu từ backend khi component mount
     useEffect(() => {
@@ -30,26 +50,117 @@ const TradingForm = () => {
         setFilteredStocks(filtered);
     }, [searchQuery, stocks]);
 
+    // Submit đặt lệnh
+    const handlePlaceOrder = (e) => {
+        e.preventDefault();
+
+        if (!selectedStock || !price || !volume) {
+            alert("Vui lòng nhập đủ thông tin!");
+            return;
+        }
+
+        console.log("Order sent:", {
+            stock: selectedStock,
+            type: orderType,
+            price: price,
+            volume: volume
+        });
+
+        alert("Đặt lệnh thành công");
+    };
+
     return (
-        <form className="trade-form">
+        <form className="trade-frame" onSubmit={handlePlaceOrder}>
+            <h2 className="trade-title">Đặt Lệnh</h2>
             {/* Phần tìm kiếm cổ phiếu */}
-            <input
-                type="text"
-                placeholder="Tìm kiếm cổ phiếu..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-            />
-            <ul className="stock-list-overlay">
-                {filteredStocks.map(stock => (
-                    <li key={stock.stock_symbol} onClick={async () => {
-                        setSearchQuery("");
-                        setSelectedStock(stock.stock_symbol);
-                    }}>
-                        {stock.stock_symbol} - {stock.stock_name}
-                    </li>
-                ))}
-            </ul>
-            {/* Phần đặt lệnh mua/bán */}
+            <div className="stock-search-wrapper" ref={wrapperRef}>
+                <label>Mã cổ phiếu</label>
+                <input
+                    type="text"
+                    placeholder="Nhập mã cổ phiếu..."
+                    value={selectedStock || searchQuery}
+                    onChange={(e) => {
+                        setSelectedStock(null);
+                        setSearchQuery(e.target.value);
+                        setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                />
+
+                {showDropdown && (
+                    <ul className="stock-list-overlay">
+                        {filteredStocks.length > 0 ? (
+                            filteredStocks.map(stock => (
+                                <li
+                                    key={stock.stock_symbol}
+                                    onClick={() => {
+                                        setSelectedStock(stock.stock_symbol);
+                                        setSearchQuery("");
+                                        setShowDropdown(false);
+                                    }}
+                                >
+                                    {stock.stock_symbol} — {stock.stock_name}
+                                </li>
+                            ))
+                        ) : (
+                            <li className="no-result">Không tìm thấy</li>
+                        )}
+                    </ul>
+                )}
+            </div>
+
+            {/* Phần đặt lệnh */}
+            <div className="order-type-container">
+                <label>Loại lệnh</label>
+                <div className="order-toggle">
+                    <button
+                        type="button"
+                        className={orderType === "BUY" ? "active-buy" : ""}
+                        onClick={() => setOrderType("BUY")}
+                    >
+                        MUA
+                    </button>
+
+                    <button
+                        type="button"
+                        className={orderType === "SELL" ? "active-sell" : ""}
+                        onClick={() => setOrderType("SELL")}
+                    >
+                        BÁN
+                    </button>
+                </div>
+            </div>
+
+            {/* GIÁ CẢ */}
+            <div className="form-group">
+                <label>Giá (VNĐ)</label>
+                <input
+                    type="number"
+                    min="0"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="Nhập giá..."
+                />
+            </div>
+
+            {/* VOLUME */}
+            <div className="form-group">
+                <label>Khối lượng</label>
+                <input
+                    type="number"
+                    min="1"
+                    value={volume}
+                    onChange={(e) => setVolume(e.target.value)}
+                    placeholder="Nhập khối lượng..."
+                />
+            </div>
+
+            {/* SUBMIT BUTTON */}
+            <button className="submit-order-btn" type="submit">
+                Đặt lệnh {orderType === "BUY" ? "MUA" : "BÁN"}
+            </button>
         </form>
     );
 };
+
+export default TradingForm;

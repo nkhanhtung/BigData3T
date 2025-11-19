@@ -94,7 +94,7 @@ const NavBar = () => {
                 {/* Menu nút */}
                 <div className="navbar-center">
                     <button className="nav-button" onClick={() => navigate('/homepage/market')}>Thị trường</button>
-                    <button className="nav-button">Giao dịch</button>
+                    <button className="nav-button" onClick={() => navigate('/homepage/trading')}>Giao dịch</button>
                     <button className="nav-button">Danh mục</button>
                     <button className="nav-button" onClick={() => navigate('/homepage/chart')}>Biểu đồ</button>
                 </div>
