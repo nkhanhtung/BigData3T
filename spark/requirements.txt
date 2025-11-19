@@ -2,3 +2,4 @@ pyspark==3.5.1
 kafka-python==2.1.0
 pydantic==2.5.1
 pydantic-settings
+pymongo==4.5.0
