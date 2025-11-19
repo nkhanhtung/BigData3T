@@ -6,6 +6,8 @@ from spark.consumer_topicKafka import matched_schema
 from backend.cores.config import settings_spark, settings_kafka
 from kafka import KafkaProducer
 import json
+from pymongo import MongoClient
+from backend.cores.config import settings_mongodb
 
 # ================= Logger =================
 logger = logging.getLogger("VolumeAlert")
@@ -58,8 +60,14 @@ agg_df = json_df.groupBy(
 
 alerts_df = agg_df.filter(col("total_volume") > settings_spark.VOLUME_THRESHOLD)
 
+# ================= Setting for Mongo sync=================
+client = MongoClient(settings_mongodb.MONGO_DATABASE_URL)
+db = client[settings_mongodb.MONGO_DB_NAME]
+volume_collection = db['volumes_alerts']
+
 # ================= Alert logic =================
 def process_volume_batch(batch_df, batch_id):
+    volume_msg_list = []
     rows = batch_df.collect()
     for row in rows:
         window_start = row['window']['start']
@@ -77,6 +85,13 @@ def process_volume_batch(batch_df, batch_id):
         producer.send(settings_kafka.KAFKA_TOPIC_VOLUME_ALERTS, msg)
         producer.flush()
         logger.warning(f"⚠️ Volume alert sent to Kafka: {msg}")
+        volume_msg_list.append(msg)
+        logger.info("Appended msg in volume_msg_list")
+    
+    if volume_msg_list:
+        volume_collection.insert_many(volume_msg_list)
+        logger.info("Insert successfully in Mongodb")
+    logger.info("Finish volume batch")
 
 # ================= Start streaming =================
 query = alerts_df.writeStream \

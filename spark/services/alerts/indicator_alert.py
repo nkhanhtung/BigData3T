@@ -7,8 +7,10 @@ from spark.consumer_topicKafka import matched_schema
 from backend.cores.config import settings_kafka, settings_spark
 from kafka import KafkaProducer
 from spark.services.trading.indicator import sma, ema, vwap, rsi, macd, bollinger_bands, generate_trading_signal
-
+from pymongo import MongoClient
+from backend.cores.config import settings_mongodb
 # ================= Logger =================
+
 logger = logging.getLogger("IndicatorAlert")
 logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
@@ -45,8 +47,14 @@ json_df = df.selectExpr("CAST(value AS STRING) as json_str") \
     .select(from_json(col("json_str"), matched_schema).alias("data")) \
     .select("data.*")
 
+# ================= Setting for Mongo sync=================
+client = MongoClient(settings_mongodb.MONGO_DATABASE_URL)
+db = client[settings_mongodb.MONGO_DB_NAME]
+indicator_collection = db['indicators_alerts']
+
 # ================= Indicator Logic =================
 def process_indicators(batch_df, batch_id):
+    indicator_msg_list = []
     row_count = batch_df.count()
     logger.info(f"Processing batch_id={batch_id} with {row_count} rows")
     if row_count == 0:
@@ -84,6 +92,11 @@ def process_indicators(batch_df, batch_id):
         producer.send(settings_kafka.KAFKA_TOPIC_INDICATOR_ALERTS, indicator_msg)
         producer.flush()
         logger.info(f"Indicator sent to Kafka: {indicator_msg}")
+        indicator_msg_list.append(indicator_msg)
+        logger.info("Appended indicator_msg in Indicator_msg_list")
+    if indicator_msg_list:
+        indicator_collection.insert_many(indicator_msg_list)
+        logger.info("Insert successfully in Mongodb")
 
 # ================= Start streaming =================
 query = json_df.writeStream \
