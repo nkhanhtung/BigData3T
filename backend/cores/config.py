@@ -40,11 +40,23 @@ class SettingsRedis(BaseSettings):
     REDIS_DB: int = 0
     REDIS_PASSWORD: Optional[str] = None
 
+    MAX_FAILED_ATTEMPTS: int = 5           # số lần login sai tối đa
+    FAILED_ATTEMPT_TTL_MINUTES: int = 5    # TTL của key failed login, phút
+    BLOCK_TIME_MINUTES: int = 5             # Thời gian khóa user sau quá số lần login sai, phút
+
     @property
     def REDIS_URL(self) -> str:
         if self.REDIS_PASSWORD:
             return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+    @property
+    def FAILED_ATTEMPT_TTL_SECONDS(self) -> int:
+        return self.FAILED_ATTEMPT_TTL_MINUTES * 60
+
+    @property
+    def BLOCK_TIME_SECONDS(self) -> int:
+        return self.BLOCK_TIME_MINUTES * 60
 
 
 class SettingsMongoDB(BaseSettings):
@@ -54,20 +66,10 @@ class SettingsMongoDB(BaseSettings):
         extra='ignore'
     )
 
-    MONGODB_HOST: str = "localhost"
-    MONGODB_PORT: int = 27017
-    MONGODB_USERNAME: Optional[str] = None
-    MONGODB_PASSWORD: Optional[str] = None
-    MONGODB_DATABASE: str = "trading_app_db" 
-    MONGODB_AUTHSOURCE: Optional[str] = None
+    # Full connection string (MongoDB Atlas)
+    MONGO_DATABASE_URL: str = "mongodb+srv://maiminhtung2005_db_user:ggzaIHwy1EOsEFnC@cluster0.lu0egys.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    MONGO_DB_NAME: str = "BigData"
 
-    @property
-    def MONGODB_URL(self) -> str:
-        if self.MONGODB_USERNAME and self.MONGODB_PASSWORD:
-            if self.MONGODB_AUTHSOURCE:
-                 return f"mongodb://{self.MONGODB_USERNAME}:{self.MONGODB_PASSWORD}@{self.MONGODB_HOST}:{self.MONGODB_PORT}/{self.MONGODB_DATABASE}?authSource={self.MONGODB_AUTHSOURCE}"
-            return f"mongodb://{self.MONGODB_USERNAME}:{self.MONGODB_PASSWORD}@{self.MONGODB_HOST}:{self.MONGODB_PORT}/{self.MONGODB_DATABASE}"
-        return f"mongodb://{self.MONGODB_HOST}:{self.MONGODB_PORT}/{self.MONGODB_DATABASE}"
 
 class SettingsSpark(BaseSettings):
     SPARK_APP_NAME: str = "TradingAlerts"
