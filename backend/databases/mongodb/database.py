@@ -13,24 +13,19 @@ async def get_db_connection():
     global mongo_client, mongo_database
     if mongo_client is None:
         try:
-            MONGO_DATABASE_URL = "mongodb+srv://maiminhtung2005_db_user:ggzaIHwy1EOsEFnC@cluster0.lu0egys.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-            MONGO_DB_NAME = "BigData" 
-
             mongo_client = AsyncIOMotorClient(
-                MONGO_DATABASE_URL,
+                settings_mongodb.MONGO_DATABASE_URL,  # ← dùng property ở trên
                 serverSelectionTimeoutMS=5000 
             )
             await mongo_client.admin.command('ping') 
             
-            mongo_database = mongo_client[MONGO_DB_NAME]
+            mongo_database = mongo_client[settings_mongodb.MONGO_DB_NAME]  # ← dùng database từ config
             logger.info("MongoDB client and database initialized successfully.")
-            
-
         except Exception as e:
             logger.critical(f"Failed to connect to MongoDB: {e}", exc_info=True)
-            raise 
-    
-    return mongo_database 
+            raise
+    return mongo_database
+
 
 async def close_db_connection():
     global mongo_client
@@ -50,3 +45,23 @@ async def get_mongo_db():
 async def get_stock_logs_collection():
     db = await get_mongo_db()
     return db['stocks_logs']
+
+async def get_login_user_logs_collection():
+    db = await get_mongo_db()
+    return db['logins_users']
+
+async def get_logout_user_logs_collection():
+    db = await get_mongo_db()
+    return db['logouts_users']
+
+# async def get_price_alert_logs_collection():
+#     db = await get_mongo_db()
+#     return db['prices_alerts']
+
+# async def get_volume_alert_logs_collection():
+#     db = await get_mongo_db()
+#     return db['volumes_alerts']
+
+# async def get_indicator_alert_logs_collection():
+#     db = await get_mongo_db()
+#     return db['indicators_alerts']

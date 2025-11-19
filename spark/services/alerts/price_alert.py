@@ -5,6 +5,8 @@ from spark.consumer_topicKafka import matched_schema
 from backend.cores.config import settings_kafka, settings_spark
 from kafka import KafkaProducer
 import json
+from pymongo import MongoClient
+from backend.cores.config import settings_mongodb
 
 # ================= Logger =================
 logger = logging.getLogger("PriceAlert")
@@ -43,10 +45,16 @@ json_df = df.selectExpr("CAST(value AS STRING) as json_str") \
     .select(from_json(col("json_str"), matched_schema).alias("data")) \
     .select("data.*")
 
+# ================= Setting for Mongo sync=================
+client = MongoClient(settings_mongodb.MONGO_DATABASE_URL)
+db = client[settings_mongodb.MONGO_DB_NAME]
+price_collection = db['prices_alerts']
+
 # ================= Alert Logic =================
 last_prices = {}
 
 def process_batch(batch_df, batch_id):
+    price_msg_list = []
     row_count = batch_df.count()
     logger.info(f"Processing batch_id={batch_id} with {row_count} rows")
     
@@ -73,7 +81,13 @@ def process_batch(batch_df, batch_id):
                 producer.send(settings_kafka.KAFKA_TOPIC_PRICE_ALERTS, alert)
                 producer.flush()
                 logger.warning(f"⚠️ Price alert sent to Kafka: {alert}")
+                price_msg_list.append(alert)
+                logger.info("Appended alert in Price_msg_list")
 
+    if price_msg_list:
+        price_collection.insert_many(price_msg_list)
+        logger.info('Insert successfully in Mongodb')
+        
     logger.info(f"Updated last_prices: {last_prices}")
 
 # ================= Start streaming =================
