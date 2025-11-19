@@ -4,9 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+import StockDashboardOverlay from '../StockDashboard/stockDashboardOverlay';
+
 const NavBar = () => {
     const [showMenu, setShowMenu] = useState(false);
     const [showConfirmLogout, setShowConfirmLogout] = useState(false);
+
+    const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [stocks, setStocks] = useState([]);
+    const [filteredStocks, setFilteredStocks] = useState([]);
+
+    const [selectedStock, setSelectedStock] = useState(null); // mã stock đang chọn
+    const [showStockDashboard, setShowStockDashboard] = useState(false); // hiển thị overlay thông tin stock
+
     const menuRef = useRef(null);
     const navigate = useNavigate();
 
@@ -23,6 +34,30 @@ const NavBar = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Lấy danh sách cổ phiếu từ backend khi component mount
+    useEffect(() => {
+        const fetchStocks = async () => {
+            try {
+                const res = await axios.get("http://localhost:8000/visualization/stocks/list");
+                setStocks(res.data.stocks);
+                setFilteredStocks(res.data.stocks);
+            } catch (err) {
+                console.error("Lỗi lấy danh sách cổ phiếu:", err);
+            }
+        };
+        fetchStocks();
+    }, []);
+
+    // Lọc danh sách khi người dùng gõ
+    useEffect(() => {
+        const filtered = stocks.filter(
+            (s) =>
+                s.stock_symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.stock_name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredStocks(filtered);
+    }, [searchQuery, stocks]);
 
     // Logic đăng xuất
     const confirmLogout = async () => {
@@ -66,7 +101,7 @@ const NavBar = () => {
 
                 {/* Thanh tìm kiếm & nút truy cập hồ sơ tài khoản */}
                 <div className="navbar-right" ref={menuRef}>
-                    <div className="search-fake">
+                    <div className="search-fake" onClick={() => setShowSearchOverlay(true)}>
                         <i className="fas fa-search"></i>
                         <span className="search-placeholder">Tìm kiếm cổ phiếu...</span>
                     </div>
@@ -86,6 +121,41 @@ const NavBar = () => {
                     )}
                 </div>
             </nav>
+
+            {/* Overlay search */}
+            {showSearchOverlay && (
+                <div className='search-overlay' onClick={() => setShowSearchOverlay(false)}>
+                    <div className='search-overlay-box' onClick={e => e.stopPropagation()}>
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm cổ phiếu..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            autoFocus
+                        />
+                        <ul className='search-overlay-list'>
+                            {filteredStocks.map(stock => (
+                                <li key={stock.stock_symbol} onClick={async () => {
+                                    setShowSearchOverlay(false);
+                                    setSearchQuery("");
+                                    setSelectedStock(stock.stock_symbol);
+                                    setShowStockDashboard(true);
+                                }}>
+                                    {stock.stock_symbol} - {stock.stock_name}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            )}
+
+            {/* Dashboard Overlay */}
+            {showStockDashboard && (
+                <StockDashboardOverlay
+                    stockSymbol={selectedStock}
+                    onClose={() => setShowStockDashboard(false)}
+                />
+            )}
 
             {/* Hộp thoại xác nhận đăng xuất */}
             {showConfirmLogout && (
