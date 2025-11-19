@@ -1,6 +1,7 @@
 import NavigationBar from './navigation_bar';
 import MarketPage from './MarketSection/marketPage';
 import ChartPage from './ChartSection/chartPage';
+import TransactionPage from './TradingSection/transactionPage'
 import './homepage.css';
 import { Routes, Route } from 'react-router-dom';
 
@@ -13,6 +14,7 @@ export default function App() {
                 <Routes>
                     <Route path="market" element={<MarketPage />} />
                     <Route path="chart" element={<ChartPage />} />
+                    <Route path="trading" element={<TransactionPage />} />
                     {/* Mặc định vào /homepage sẽ vào market */}
                     <Route path="/" element={<MarketPage />} />
                 </Routes>
