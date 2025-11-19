@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 import uvicorn
-from routers import user, admin, trading, visualization
+from routers import user, admin, trading, visualization, realtime
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from cores.kafka_client import get_kafka_producer_async, close_kafka_producer
@@ -17,15 +17,16 @@ app.include_router(user.router, prefix="/user", tags=['User Management'])
 app.include_router(admin.router, prefix="/admin", tags=["Admin Management"])
 app.include_router(trading.router, prefix="/trading", tags=["Trading Operations"])
 app.include_router(visualization.router, prefix="/visualization", tags=["Visualize Stocks"])
-
+app.include_router(realtime.router, prefix="/realtime", tags=["Realtime Trading"])
 
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"], 
     allow_headers=["*"],  
