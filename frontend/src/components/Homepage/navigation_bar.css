@@ -202,3 +202,61 @@
 .btn-cancel:hover {
   background-color: #666;
 }
+
+/* CSS cho hộp tìm kiếm dark mode */
+.search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.7); /* nền tối hơn, mờ */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+}
+
+.search-overlay-box {
+    background-color: #1e1e2f; /* màu tối hơn cho hộp */
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.search-overlay-box input {
+    padding: 8px 12px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #555; /* viền tối */
+    background-color: #2a2a3b; /* nền input tối */
+    color: #eee; /* chữ sáng */
+    margin-bottom: 12px;
+}
+
+.search-overlay-box input::placeholder {
+    color: #aaa; /* placeholder màu nhạt hơn */
+}
+
+.search-overlay-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
+    border-top: 1px solid #444; /* màu border tối */
+}
+
+.search-overlay-list li {
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #eee; /* chữ sáng */
+}
+
+.search-overlay-list li:hover {
+    background-color: #33334a; /* hover tối nhưng nổi bật */
+}
