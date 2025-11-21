@@ -2,11 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "./tradeRequestFrame.css";
 
-const TradingForm = () => {
+const TradingForm = ({ selectedStock, setSelectedStock }) => {
     const [stocks, setStocks] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredStocks, setFilteredStocks] = useState([]);
-    const [selectedStock, setSelectedStock] = useState(null);
+    // const [selectedStock, setSelectedStock] = useState(null);
 
     const [orderType, setOrderType] = useState("BUY");
     const [price, setPrice] = useState("");
