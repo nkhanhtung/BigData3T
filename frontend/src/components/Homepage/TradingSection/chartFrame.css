@@ -1,15 +1,3 @@
-.stock-dashboard-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.65);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 300;
-}
-
 .stock-dashboard-box {
     width: 95%;
     height: 90%;

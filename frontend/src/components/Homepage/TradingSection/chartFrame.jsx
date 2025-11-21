@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import './stockDashboardOverlay.css';
+import './chartFrame.css';
 
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, TimeScale, Tooltip, Legend } from "chart.js";
 import { Chart } from "react-chartjs-2";
@@ -11,14 +11,14 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 // --- Đăng ký Chart.js ---
 ChartJS.register( CategoryScale, LinearScale, BarElement, LineElement, PointElement, TimeScale, Tooltip, Legend, CandlestickController, CandlestickElement, zoomPlugin );
 
-const StockDashboardOverlay = ({ stockSymbol, onClose }) => {
+const ChartFrame = ({ stockSymbol }) => {
     const [infoData, setInfoData] = useState(null);
     const [ohlcvData, setOhlcvData] = useState([]);
     const [activeTab, setActiveTab] = useState("overview");
     const [chartType, setChartType] = useState("candlestick");
     const [period, setPeriod] = useState("day"); // day, week, month
 
-    // --- Fetch data từ backend ---
+    // Lấy data từ backend
     useEffect(() => {
         if (!stockSymbol) return;
 
@@ -210,54 +210,52 @@ const StockDashboardOverlay = ({ stockSymbol, onClose }) => {
     };
 
     return (
-        <div className="stock-dashboard-overlay" onClick={onClose}>
-            <div className="stock-dashboard-box" onClick={(e) => e.stopPropagation()}>
-                {/* HEADER */}
-                <div className="dashboard-header">
-                    <div>
-                        <h2>{infoData.stock_symbol} ({infoData.market_name})</h2>
-                        <p>{infoData.stock_name}</p>
+        <div className="stock-dashboard-box" onClick={(e) => e.stopPropagation()}>
+            {/* HEADER */}
+            <div className="dashboard-header">
+                <div>
+                    <h2>{infoData.stock_symbol} ({infoData.market_name})</h2>
+                    <p>{infoData.stock_name}</p>
+                </div>
+                <button className="btn-chart">Xem phân tích chi tiết</button>
+            </div>
+
+            {/* TAB MENU */}
+            <div className="dashboard-tabs">
+                <button className={activeTab === "overview" ? "active" : ""} onClick={() => setActiveTab("overview")}>Tổng quan</button>
+                <button className={activeTab === "info" ? "active" : ""} onClick={() => setActiveTab("info")}>Thông tin</button>
+            </div>
+
+            {/* CHART */}
+            <div className="dashboard-body">
+                <div className="dashboard-chart-area">
+                    <div className="chart-toolbar">
+                        <div className="period-dropdown">
+                            <button>Chu kỳ: {period === 'day' ? '1 Ngày' : period === 'week' ? '1 Tuần' : '1 Tháng'}</button>
+                            <div className="dropdown-content">
+                                <button onClick={() => setPeriod("day")}>1 Ngày</button>
+                                <button onClick={() => setPeriod("week")}>1 Tuần</button>
+                                <button onClick={() => setPeriod("month")}>1 Tháng</button>
+                            </div>
+                        </div>
+                        <button>Chỉ báo</button>
+                        <div className="chart-type-dropdown">
+                            <button>Loại: {chartType === 'candlestick' ? 'Nến' : chartType === 'line' ? 'Đường' : 'Cột'}</button>
+                            <div className="dropdown-content">
+                                <button onClick={() => setChartType("candlestick")}>Biểu đồ nến</button>
+                                <button onClick={() => setChartType("line")}>Đường thẳng</button>
+                                <button onClick={() => setChartType("bar")}>Biểu đồ cột</button>
+                            </div>
+                        </div>
                     </div>
-                    <button className="btn-chart">Xem phân tích chi tiết</button>
-                </div>
-
-                {/* TAB MENU */}
-                <div className="dashboard-tabs">
-                    <button className={activeTab === "overview" ? "active" : ""} onClick={() => setActiveTab("overview")}>Tổng quan</button>
-                    <button className={activeTab === "info" ? "active" : ""} onClick={() => setActiveTab("info")}>Thông tin</button>
-                </div>
-
-                {/* CHART */}
-                <div className="dashboard-body">
-                    <div className="dashboard-chart-area">
-                        <div className="chart-toolbar">
-                            <div className="period-dropdown">
-                                <button>Chu kỳ: {period === 'day' ? '1 Ngày' : period === 'week' ? '1 Tuần' : '1 Tháng'}</button>
-                                <div className="dropdown-content">
-                                    <button onClick={() => setPeriod("day")}>1 Ngày</button>
-                                    <button onClick={() => setPeriod("week")}>1 Tuần</button>
-                                    <button onClick={() => setPeriod("month")}>1 Tháng</button>
-                                </div>
-                            </div>
-                            <button>Chỉ báo</button>
-                            <div className="chart-type-dropdown">
-                                <button>Loại: {chartType === 'candlestick' ? 'Nến' : chartType === 'line' ? 'Đường' : 'Cột'}</button>
-                                <div className="dropdown-content">
-                                    <button onClick={() => setChartType("candlestick")}>Biểu đồ nến</button>
-                                    <button onClick={() => setChartType("line")}>Đường thẳng</button>
-                                    <button onClick={() => setChartType("bar")}>Biểu đồ cột</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="chart-container">
-                            {aggregateData.length > 0 && (
-                                <Chart
-                                    type={chartType === "candlestick" ? "candlestick" : chartType}
-                                    data={chartData()}
-                                    options={chartOptions}
-                                />
-                            )}
-                        </div>
+                    <div className="chart-container">
+                        {aggregateData.length > 0 && (
+                            <Chart
+                                type={chartType === "candlestick" ? "candlestick" : chartType}
+                                data={chartData()}
+                                options={chartOptions}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
@@ -265,4 +263,4 @@ const StockDashboardOverlay = ({ stockSymbol, onClose }) => {
     );
 };
 
-export default StockDashboardOverlay;
+export default ChartFrame;
