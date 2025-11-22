@@ -73,6 +73,7 @@ pyspark-shell"
 COPY backend /app/backend
 COPY spark /app/spark
 
+ENV CUDA_VISIBLE_DEVICES=-1
 ENV PYTHONPATH=/app
 
 WORKDIR /app/backend

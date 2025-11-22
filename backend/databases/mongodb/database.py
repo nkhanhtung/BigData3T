@@ -53,15 +53,3 @@ async def get_login_user_logs_collection():
 async def get_logout_user_logs_collection():
     db = await get_mongo_db()
     return db['logouts_users']
-
-# async def get_price_alert_logs_collection():
-#     db = await get_mongo_db()
-#     return db['prices_alerts']
-
-# async def get_volume_alert_logs_collection():
-#     db = await get_mongo_db()
-#     return db['volumes_alerts']
-
-# async def get_indicator_alert_logs_collection():
-#     db = await get_mongo_db()
-#     return db['indicators_alerts']
