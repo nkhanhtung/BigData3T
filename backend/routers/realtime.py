@@ -17,9 +17,11 @@ async def websocket_price_alerts(websocket: WebSocket):
 async def matched_volume_alerts(websocket: WebSocket):
     await stream_volume_alerts(websocket)
 
+
 @router.websocket("/ws/indicator-alerts")
 async def matched_indicator_alerts(websocket: WebSocket):
     await stream_indicator_alerts(websocket)
+    
 
 @router.websocket("/ws/candlestick-ohlc")
 async def matched_candlestick_ohlc(websocket: WebSocket):
