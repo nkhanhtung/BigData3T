@@ -1,0 +1,31 @@
+/* === Toàn trang Homepage === */
+.homepage-container {
+  min-height: 100vh;              /* Chiều cao tối thiểu = chiều cao màn hình */
+  background-color: #191919;      /* Nền xám sáng nhẹ */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* === Thanh điều hướng chiếm toàn chiều ngang === */
+.homepage-container .navbar {
+  width: 100%;                    /* full width */
+  box-sizing: border-box;
+  position: relative;              /* đảm bảo không bị cố định */
+  top: 0;
+  left: 0;
+}
+
+/* (Tùy chọn) Đổ bóng nhẹ cho navbar để nổi bật hơn */
+.homepage-container .navbar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* === Phần nội dung trang chính sau navbar === */
+.main-content {
+  flex: 1;
+  width: 100%;
+  padding: 40px;
+}

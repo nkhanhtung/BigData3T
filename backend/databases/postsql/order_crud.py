@@ -5,11 +5,11 @@ from uuid import UUID
 
 from models.order import Order
 
-async def get_orders_by_user_id_db(db: AsyncSession, user_id: UUID) -> List[Order]:
+async def get_orders_by_user_id_db(db: AsyncSession, user_id: int) -> List[Order]:
     stmt = (
         select(Order)
         .where(Order.user_id == user_id)
-        .order_by(Order.created_at.desc())
+        .order_by(Order.created_timestamp.desc())
     )
     result = await db.execute(stmt)
     orders = result.scalars().all()

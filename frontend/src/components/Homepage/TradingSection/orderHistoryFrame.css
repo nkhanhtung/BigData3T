@@ -1,0 +1,100 @@
+.order-history-frame {
+    padding: 16px;
+    background: #121212;
+    color: white;
+}
+
+.order-history-title {
+    font-size: 20px;
+    margin-bottom: 12px;
+    font-weight: bold;
+}
+
+.order-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.order-table th,
+.order-table td {
+    padding: 10px 12px;
+    text-align: center;
+}
+
+.order-table thead {
+    background: #222;
+    font-weight: bold;
+}
+
+.order-table tr {
+    border-bottom: 1px solid #333;
+}
+
+.order-table tr:hover {
+    background: #2a2a2a;
+}
+
+.buy {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.sell {
+    color: #ff5252;
+    font-weight: bold;
+}
+
+.status {
+    font-weight: bold;
+}
+
+.status.pending {
+    color: orange;
+}
+
+.status.partially_filled {
+    color: #00bcd4;
+}
+
+.status.filled {
+    color: #4caf50;
+}
+
+.status.cancelled {
+    color: #ff5252;
+}
+
+.empty-text {
+    padding: 20px;
+    color: #aaa;
+}
+
+.cancel-btn {
+    padding: 6px 12px;
+    background-color: #ff5252;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.cancel-btn:hover {
+    background-color: #ff7979;
+    transform: scale(1.05);
+}
+
+.cancel-btn:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+    color: #eee;
+}
+
+.no-action {
+    display: inline-block;
+    width: 60px; /* chiều rộng tương đương nút hủy để bảng không nhảy */
+}
