@@ -38,41 +38,7 @@ async def register_user(user: UserCreate, db: AsyncSession = Depends(get_async_s
     await db.refresh(new_user) 
     return new_user
 
-# @router.post("/login", response_model=UserLogin)
-# async def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
-#                     db: AsyncSession = Depends(get_async_session),
-#                     redis_client: aioredis.Redis = Depends(get_redis_client),
-#                     mongo_collection = Depends(get_login_user_logs_collection)):
-#     result = await db.execute(
-#         select(User).where(User.user_email == form_data.username)
-#     )
-#     user = result.scalar_one_or_none()
 
-#     if not user :
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
-    
-#     if not verify_password(form_data.password, user.password_hash):
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
-    
-#     access_token = create_access_token(data={"sub": user.user_email})
-#     old_token = await redis_client.get(f"user:{user.user_email}:token")
-#     if old_token:
-#         await redis_client.delete(old_token)
-#     await redis_client.set(f"user:{user.user_email}:token", access_token, ex=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-
-#     await mongo_collection.insert_one({
-#         "user_email": user.user_email,
-#         "user_name": user.user_name,
-#         "login_time": datetime.utcnow(),
-#         "success": True
-#     })
-
-#     return UserLogin(
-#         user_name=user.user_name,
-#         user_email=user.user_email,
-#         current_token=access_token,
-#         token_type="bearer"
-#     )
 @router.post("/login", response_model=UserLogin)
 async def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
