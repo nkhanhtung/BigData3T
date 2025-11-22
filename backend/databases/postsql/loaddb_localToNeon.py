@@ -23,7 +23,7 @@ metadata = MetaData()
 # DEFINE TABLE - NO stock_id
 # ================================
 daily_stock_table = Table(
-    "daily_stocks_prices",
+    "monthly_stocks_prices",
     metadata,
     Column("stock_symbol", String(3), nullable=False),
     Column("date", Date, nullable=False),
@@ -89,10 +89,10 @@ async def load_multiple_csv(folder_path: str, file_list: list):
 # MAIN
 # ================================
 if __name__ == "__main__":
-    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_daily/Banking"
+    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_monthly/all"
 
     files = [
-     "ACB.csv"  ,"BID.csv"  ,"CTG.csv"  ,"HDB.csv",  "MBB.csv" , "SHB.csv"  ,"STB.csv"  ,"TCB.csv" , "VCB.csv"  ,"VPB.csv"
+        "ACB.csv","BID.csv","CII.csv","CTD.csv","CTG.csv","FCN.csv","FTS.csv","HBC.csv","HCM.csv","HDB.csv","HHV.csv","HVN.csv","KDH.csv","MBB.csv","NVL.csv","PDR.csv","SHB.csv","SHS.csv","STB.csv","TCB.csv","VCB.csv","VCI.csv","VHM.csv","VIC.csv","VJC.csv","VOS.csv","VND.csv","VPB.csv","VSC.csv","VRE.csv","VTP.csv"
     ]
 
     asyncio.run(load_multiple_csv(folder, files))
