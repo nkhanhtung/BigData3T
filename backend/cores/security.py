@@ -69,9 +69,10 @@ def get_user_from_token(token: str) -> dict:
 def get_user_current(token: str = Depends(oauth2_scheme)):
     payload = decode_access_token(token)
     user_email = payload.get("sub")
+    user_id = payload.get("user_id")
 
     stored_token =  r.get(f"user:{user.user_email}:token")
     if stored_token != token or not r.get(token):
         raise HTTPException(status_code=401, detail="Token expired or Invalid")
 
-    return user_email
+    return {"user_email": user_email, "user_id": user_id}

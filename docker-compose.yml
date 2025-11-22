@@ -38,10 +38,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     healthcheck:
-      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "kafka:29092"] # Kiểm tra broker sẵn sàng
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:29092 --list || exit 1"] # Kiểm tra broker sẵn sàng
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 10
 
   # --- 3. Kafka Topic Initializer ---
   kafka-init-topics:
@@ -372,9 +372,26 @@ services:
       - ./backend:/app/backend # Mount code backend để có thể import
     restart: on-failure
 
+  # Frontend
+  frontend-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    hostname: frontend-app
+    container_name: frontend-app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend-app
+    environment:
+      VITE_API_BASE_URL: http://backend-app:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+
 # --- Volumes để lưu trữ dữ liệu bền vững ---
 volumes:
   postgres_data:
   redis_data:
   mongodb_data:
-  

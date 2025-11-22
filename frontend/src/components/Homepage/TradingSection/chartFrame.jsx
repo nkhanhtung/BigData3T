@@ -106,7 +106,23 @@ const ChartFrame = ({ stockSymbol }) => {
         return aggregated;
     }, [ohlcvData, period]);
 
-    if (!infoData) return null;
+    // Nếu chưa chọn mã cổ phiếu -> hiển thị khung trống lớn
+    if (!stockSymbol) {
+        return (
+            <div className="empty-chart">
+                <div className="empty-chart-text">Chưa chọn mã cổ phiếu</div>
+            </div>
+        );
+    }
+
+    // Nếu có mã mà chưa load data -> loading
+    if (!infoData) {
+        return (
+            <div className="empty-chart">
+                <div className="empty-chart-text">Đang tải dữ liệu...</div>
+            </div>
+        );
+    }
 
     // --- Chuẩn bị dữ liệu cho Chart.js ---
     const chartData = () => {
@@ -210,7 +226,7 @@ const ChartFrame = ({ stockSymbol }) => {
     };
 
     return (
-        <div className="stock-dashboard-box" onClick={(e) => e.stopPropagation()}>
+        <div className="stock-dashboard-frame" onClick={(e) => e.stopPropagation()}>
             {/* HEADER */}
             <div className="dashboard-header">
                 <div>
@@ -229,33 +245,35 @@ const ChartFrame = ({ stockSymbol }) => {
             {/* CHART */}
             <div className="dashboard-body">
                 <div className="dashboard-chart-area">
-                    <div className="chart-toolbar">
-                        <div className="period-dropdown">
-                            <button>Chu kỳ: {period === 'day' ? '1 Ngày' : period === 'week' ? '1 Tuần' : '1 Tháng'}</button>
-                            <div className="dropdown-content">
-                                <button onClick={() => setPeriod("day")}>1 Ngày</button>
-                                <button onClick={() => setPeriod("week")}>1 Tuần</button>
-                                <button onClick={() => setPeriod("month")}>1 Tháng</button>
+                    <div className="chart-frame-wrapper">
+                        <div className="chart-toolbar">
+                            <div className="period-dropdown">
+                                <button>Chu kỳ: {period === 'day' ? '1 Ngày' : period === 'week' ? '1 Tuần' : '1 Tháng'}</button>
+                                <div className="dropdown-content">
+                                    <button onClick={() => setPeriod("day")}>1 Ngày</button>
+                                    <button onClick={() => setPeriod("week")}>1 Tuần</button>
+                                    <button onClick={() => setPeriod("month")}>1 Tháng</button>
+                                </div>
+                            </div>
+                            <button>Chỉ báo</button>
+                            <div className="chart-type-dropdown">
+                                <button>Loại: {chartType === 'candlestick' ? 'Nến' : chartType === 'line' ? 'Đường' : 'Cột'}</button>
+                                <div className="dropdown-content">
+                                    <button onClick={() => setChartType("candlestick")}>Biểu đồ nến</button>
+                                    <button onClick={() => setChartType("line")}>Đường thẳng</button>
+                                    <button onClick={() => setChartType("bar")}>Biểu đồ cột</button>
+                                </div>
                             </div>
                         </div>
-                        <button>Chỉ báo</button>
-                        <div className="chart-type-dropdown">
-                            <button>Loại: {chartType === 'candlestick' ? 'Nến' : chartType === 'line' ? 'Đường' : 'Cột'}</button>
-                            <div className="dropdown-content">
-                                <button onClick={() => setChartType("candlestick")}>Biểu đồ nến</button>
-                                <button onClick={() => setChartType("line")}>Đường thẳng</button>
-                                <button onClick={() => setChartType("bar")}>Biểu đồ cột</button>
-                            </div>
+                        <div className="chart-container">
+                            {aggregateData.length > 0 && (
+                                <Chart
+                                    type={chartType === "candlestick" ? "candlestick" : chartType}
+                                    data={chartData()}
+                                    options={chartOptions}
+                                />
+                            )}
                         </div>
-                    </div>
-                    <div className="chart-container">
-                        {aggregateData.length > 0 && (
-                            <Chart
-                                type={chartType === "candlestick" ? "candlestick" : chartType}
-                                data={chartData()}
-                                options={chartOptions}
-                            />
-                        )}
                     </div>
                 </div>
             </div>
