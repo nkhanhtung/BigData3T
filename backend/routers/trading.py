@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from datetime import datetime
 import uuid
+from uuid import UUID
 import logging
 
 from schemas.order import OrderCreate, OrderInDB, OrderUpdate
@@ -40,6 +41,12 @@ async def place_order(order_data: OrderCreate, db: AsyncSession = Depends(get_as
     except Exception as e:
         logger.error(f"Error placing order: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to place order")
+    
+
+@router.get("/user/{user_id}", response_model=List[OrderInDB])
+async def get_user_orders(user_id: int, db: AsyncSession = Depends(get_async_session)):
+    orders = await get_orders_by_user_id_db(db, user_id)
+    return orders
 
 
 @router.put("/{order_id}/update", response_model=OrderInDB)
@@ -48,10 +55,10 @@ async def update_order(order_id: uuid.UUID, order_update_data: OrderUpdate, db: 
     if not existing_order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
     
-    if existing_order.current_status not in ["PENDING", "PARTIALLY_FILLED"]:
+    if existing_order.status not in ["PENDING", "PARTIALLY_FILLED"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot update order with status '{existing_order.current_status}'"
+            detail=f"Cannot update order with status '{existing_order.status}'"
         )
 
     kafka_message = {
@@ -78,10 +85,10 @@ async def cancel_order(order_id: uuid.UUID, db: AsyncSession = Depends(get_async
     if not existing_order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
 
-    if existing_order.current_status not in ["PENDING", "PARTIALLY_FILLED"]:
+    if existing_order.status not in ["PENDING", "PARTIALLY_FILLED"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot cancel order with status '{existing_order.current_status}'"
+            detail=f"Cannot cancel order with status '{existing_order.status}'"
         )
 
     kafka_message = {
@@ -106,9 +113,3 @@ async def get_order_details(order_id: uuid.UUID, db: AsyncSession = Depends(get_
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
     return order
-
-
-@router.get("/user/{user_id}", response_model=List[OrderInDB])
-async def get_user_orders(user_id: uuid.UUID, db: AsyncSession = Depends(get_async_session)):
-    orders = await get_orders_by_user_id_db(db, user_id)
-    return orders

@@ -1,6 +1,6 @@
-.stock-dashboard-box {
-    width: 95%;
-    height: 90%;
+.stock-dashboard-frame {
+    width: 100%;
+    height: 100%;
     background: #121212;
     color: #ddd;
     border-radius: 12px;
@@ -39,13 +39,16 @@
 .dashboard-body {
     display: flex;
     flex: 1;
+    height: 100%;
+    overflow: hidden;
 }
 
 .dashboard-chart-area {
-    flex: 3;
+    flex: 1;
     display: flex;
     flex-direction: column;
     border-right: 1px solid #333;
+    overflow: hidden;
 }
 
 .chart-toolbar {
@@ -57,9 +60,10 @@
 
 .chart-container {
     flex: 1;
-    background: #0c0c0c;
     width: 100%;
-    height: 500px; /* Tăng chiều cao */
+    height: 100%;
+    padding: 10px;
+    background: #0c0c0c;
     position: relative;
     overflow: hidden;
 }
@@ -242,9 +246,9 @@
    VÙNG CHART
 =========================== */
 .chart-container {
-    padding: 10px;
-    background: #0c0c0c;
-    position: relative;
+    flex: 1;      /* chiếm toàn bộ chiều cao parent */
+    min-height: 400px; /* nếu parent nhỏ */
+    max-height: 650px; /* giới hạn chart */
 }
 
 .chart-container canvas {
@@ -265,4 +269,35 @@
 
 .dashboard-chart-area {
     overflow: hidden;
+}
+
+/* Thêm/sửa phần .empty-chart */
+.empty-chart {
+    width: 100%;
+    height: 100%;
+    min-height: 500px;      /* Đảm bảo chiều cao tối thiểu */
+    flex: 1;                /* Chiếm hết không gian còn lại */
+    background: #121212;    /* Giống màu nền của .stock-dashboard-frame */
+    color: #ddd;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-chart-text {
+    font-size: 18px;
+    color: #666;
+}
+
+.chart-frame-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+
+    /* ép chiều cao tối thiểu bằng với khi chart hiển thị */
+    min-height: 500px;
+
+    background: #0c0c0c;
 }

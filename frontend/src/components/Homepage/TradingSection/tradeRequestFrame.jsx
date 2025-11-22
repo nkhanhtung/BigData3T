@@ -6,7 +6,7 @@ const TradingForm = ({ selectedStock, setSelectedStock }) => {
     const [stocks, setStocks] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredStocks, setFilteredStocks] = useState([]);
-    // const [selectedStock, setSelectedStock] = useState(null);
+    const userId = sessionStorage.getItem("user_id");
 
     const [orderType, setOrderType] = useState("BUY");
     const [price, setPrice] = useState("");
@@ -51,7 +51,7 @@ const TradingForm = ({ selectedStock, setSelectedStock }) => {
     }, [searchQuery, stocks]);
 
     // Submit đặt lệnh
-    const handlePlaceOrder = (e) => {
+    const handlePlaceOrder = async (e) => {
         e.preventDefault();
 
         if (!selectedStock || !price || !volume) {
@@ -59,14 +59,26 @@ const TradingForm = ({ selectedStock, setSelectedStock }) => {
             return;
         }
 
-        console.log("Order sent:", {
-            stock: selectedStock,
-            type: orderType,
-            price: price,
-            volume: volume
-        });
+        try {
+            const payload = {
+                user_id: userId,
+                stock_symbol: selectedStock,
+                order_type: orderType,
+                price: Number(price),
+                quantity: Number(volume)
+            };
 
-        alert("Đặt lệnh thành công");
+            const res = await axios.post(
+                'http://localhost:8000/trading/place',
+                payload
+            );
+
+            console.log("Order created:", res.data);
+            alert("Đặt lệnh thành công!");
+        } catch (err) {
+            console.error("Lỗi đặt lệnh:", err);
+            alert("Đặt lệnh thất bại!");
+        }
     };
 
     return (

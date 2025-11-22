@@ -2,6 +2,7 @@ import './UserForm.css';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from "jwt-decode";
 
 const UserForm = ({ type, isActive }) => {
   const isSignUp = type === 'sign-up';
@@ -36,7 +37,11 @@ const UserForm = ({ type, isActive }) => {
         });
 
         // LƯU LẠI TOKEN
-        sessionStorage.setItem('user_token', res.data.current_token);
+        const token = res.data.current_token;
+        sessionStorage.setItem('user_token', token);
+        const decoded = jwtDecode(token);
+        const userId = decoded.user_id;
+        sessionStorage.setItem('user_id', userId);
         alert('Đăng nhập thành công!');
         navigate('/homepage', { replace: true });
         console.log(res.data);

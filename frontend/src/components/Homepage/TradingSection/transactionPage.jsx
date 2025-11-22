@@ -17,7 +17,7 @@ const TransactionPage = () => {
             </div>
 
             <div className='right-panel'>
-                <div className='section-block'>
+                <div className='section-block chart-block'>
                     <ChartFrame stockSymbol={selectedStock} />
                 </div>
 

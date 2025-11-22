@@ -49,7 +49,7 @@ async def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Async
     if not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
     
-    access_token = create_access_token(data={"sub": user.user_email})
+    access_token = create_access_token(data={"sub": user.user_email, "user_id": str(user.user_id)})
     old_token = await redis_client.get(f"user:{user.user_email}:token")
     if old_token:
         await redis_client.delete(old_token)
