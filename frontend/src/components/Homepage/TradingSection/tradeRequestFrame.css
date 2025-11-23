@@ -1,0 +1,150 @@
+.trade-frame {
+    width: 100%;
+    padding: 22px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 0 18px rgba(0,0,0,0.5);
+    color: #f1f1f1;
+}
+
+.trade-title {
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.stock-search-wrapper {
+    position: relative;
+    margin-bottom: 18px; /* tạo khoảng cách dưới input */
+}
+
+.stock-search-wrapper label {
+    display: block;
+    margin-bottom: 8px;   /* chỉnh số này để giãn ra nhiều hơn */
+    font-size: 15px;
+    color: #ccc;
+}
+
+.stock-search-wrapper input {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    background: #2c2c2c;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #fff;
+}
+
+.stock-search-wrapper input::placeholder {
+    color: #888;
+}
+
+.stock-list-overlay {
+    position: absolute;
+    top: 108%;
+    width: 100%;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    list-style: none;
+    padding: 0;
+    margin-top: 6px;
+    z-index: 100;
+}
+
+.stock-list-overlay li {
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #eee;
+}
+
+.stock-list-overlay li:hover {
+    background: #3a3a3a;
+}
+
+.no-result {
+    padding: 10px;
+    text-align: center;
+    color: #777;
+}
+
+.order-type-container {
+    margin-top: 22px;
+}
+
+.order-type-container label {
+    display: block;
+    margin-bottom: 8px;   /* tạo khoảng cách label – content */
+    font-size: 15px;
+    color: #ccc;
+}
+
+.order-toggle {
+    display: flex;
+    gap: 10px;
+}
+
+.order-toggle button {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    cursor: pointer;
+    background: #2c2c2c;
+    color: #eee;
+}
+
+.active-buy {
+    background: #1e4423;
+    border-color: #4caf50;
+    font-weight: 600;
+}
+
+.active-sell {
+    background: #4a1e1e;
+    border-color: #e74c3c;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-top: 22px;        /* thêm khoảng cách giữa các group */
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;      /* tăng spacing label – input */
+    font-size: 15px;
+    color: #ccc;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    background: #2c2c2c;
+    border-radius: 8px;
+    border: 1px solid #444;
+    color: #fff;
+}
+
+.submit-order-btn {
+    width: 100%;
+    margin-top: 28px;
+    padding: 14px;
+    font-size: 17px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    background: #0d6efd;
+    box-shadow: 0 0 6px rgba(0,123,255,0.4);
+}
+
+.submit-order-btn:hover {
+    background: #0b5cd6;
+}
