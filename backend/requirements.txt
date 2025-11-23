@@ -1,0 +1,43 @@
+# ML
+tensorflow==2.19.0
+keras==3.10.0
+numpy>=1.26.0,<2.2.0
+pandas==2.1.0
+scikit-learn==1.1.3
+scipy==1.10.1
+joblib==1.3.2
+
+
+# FastAPI & Web
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+python-multipart==0.0.20
+
+# DB & cache
+sqlalchemy==2.0.43 
+asyncpg==0.30.0
+motor==3.7.1
+aioredis==2.0.1
+kafka-python==2.2.15
+aiokafka==0.10.0
+pyspark==3.5.1
+
+# Security & Auth
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose[cryptography]==3.5.0
+email-validator==2.3.0
+cryptography==43.0.3
+
+# Utilities
+xlrd==2.0.2
+pydantic==2.11.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+anyio==4.4.0
+click==8.1.7
+h11==0.14.0
+idna==3.10
+sniffio==1.3.1
+starlette==0.45.3
+typing-extensions==4.12.2

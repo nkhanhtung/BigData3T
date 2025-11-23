@@ -1,0 +1,262 @@
+/* === Thanh điều hướng tổng thể === */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #000; /* nền đen */
+  color: white;
+  padding: 12px 40px;
+  font-family: 'Inter', sans-serif;
+  height: 60px;
+}
+
+/* === Cột bên trái: logo + tên web === */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.web-name {
+  font-weight: 700; /* Bold */
+  font-size: 30px;
+  color: white;
+}
+
+/* === Cột giữa: các đầu mục === */
+.navbar-center {
+  display: flex;
+  gap: 60px; /* cách đều nhau */
+}
+
+.nav-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.nav-button:hover {
+  color: #00c8ff; /* đổi màu khi hover */
+}
+
+/* === Cột phải: ô tìm kiếm + icon tài khoản === */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.search-fake {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #2a2a2a; /* xám hơi sáng */
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.search-placeholder {
+  color: #bfbfbf;
+  font-size: 16px;
+}
+
+.user-icon {
+  font-size: 30px;
+  color: white;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.user-icon:hover {
+  color: #00c8ff;
+}
+
+/* === Menu người dùng (overlay khi click vào icon tài khoản) === */
+.user-menu {
+  position: absolute;
+  top: 70px; /* cách thanh navbar 1 chút */
+  right: 40px; /* canh theo vị trí icon user */
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Hiệu ứng mở mượt mà */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Các mục trong menu === */
+.menu-item {
+  padding: 12px 18px;
+  color: #f1f1f1;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: #00c8ff;
+  color: #000;
+}
+
+/* === Mục đăng xuất nổi bật === */
+.menu-item.logout {
+  border-top: 1px solid #333;
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.menu-item.logout:hover {
+  background-color: #ff6b6b;
+  color: #fff;
+}
+
+/* Overlay mờ nền */
+.logout-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+/* Hộp xác nhận */
+.logout-box {
+  background-color: #1e1e1e;
+  padding: 30px 40px;
+  border-radius: 12px;
+  text-align: center;
+  color: white;
+  width: 320px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.logout-box h3 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Nút xác nhận / huỷ */
+.logout-buttons {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.btn-confirm, .btn-cancel {
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm {
+  background-color: #ff0000;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background-color: #009ccd;
+}
+
+.btn-cancel {
+  background-color: #444;
+  color: #ddd;
+}
+
+.btn-cancel:hover {
+  background-color: #666;
+}
+
+/* CSS cho hộp tìm kiếm dark mode */
+.search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.7); /* nền tối hơn, mờ */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+}
+
+.search-overlay-box {
+    background-color: #1e1e2f; /* màu tối hơn cho hộp */
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.search-overlay-box input {
+    padding: 8px 12px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #555; /* viền tối */
+    background-color: #2a2a3b; /* nền input tối */
+    color: #eee; /* chữ sáng */
+    margin-bottom: 12px;
+}
+
+.search-overlay-box input::placeholder {
+    color: #aaa; /* placeholder màu nhạt hơn */
+}
+
+.search-overlay-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
+    border-top: 1px solid #444; /* màu border tối */
+}
+
+.search-overlay-list li {
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #eee; /* chữ sáng */
+}
+
+.search-overlay-list li:hover {
+    background-color: #33334a; /* hover tối nhưng nổi bật */
+}
