@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from datetime import datetime
 import uuid
+from uuid import UUID
 import logging
 
 from schemas.order import OrderCreate, OrderInDB, OrderUpdate
@@ -40,6 +41,12 @@ async def place_order(order_data: OrderCreate, db: AsyncSession = Depends(get_as
     except Exception as e:
         logger.error(f"Error placing order: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to place order")
+    
+
+@router.get("/user/{user_id}", response_model=List[OrderInDB])
+async def get_user_orders(user_id: int, db: AsyncSession = Depends(get_async_session)):
+    orders = await get_orders_by_user_id_db(db, user_id)
+    return orders
 
 @router.post("/{order_id}/cancel", response_model=OrderInDB)
 async def cancel_order(order_id: uuid.UUID, db: AsyncSession = Depends(get_async_session)):
@@ -80,9 +87,3 @@ async def get_order_details(order_id: uuid.UUID, db: AsyncSession = Depends(get_
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
     return order
-
-
-@router.get("/user/{user_id}", response_model=List[OrderInDB])
-async def get_user_orders(user_id: uuid.UUID, db: AsyncSession = Depends(get_async_session)):
-    orders = await get_orders_by_user_id_db(db, user_id)
-    return orders
