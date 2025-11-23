@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException, Depends, status
 from schemas.prediction import PredictionRequest, PredictionResponse
 import numpy as np
