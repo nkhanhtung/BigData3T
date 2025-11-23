@@ -1,7 +1,7 @@
 import './transactionPage.css';
 import { useEffect, useState } from "react";
 import TradeRequestFrame from "./tradeRequestFrame";
-import ChartFrame from "./ChartFrame";
+import ChartFrame from "./chartFrame";
 import OrderHistoryFrame from "./orderHistoryFrame";
 
 const TransactionPage = () => {
