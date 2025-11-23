@@ -1,0 +1,71 @@
+.transaction-layout {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: calc(100vh - 80px); /* Chiếm gần hết chiều cao viewport */
+}
+
+/* Panel trái: form đặt lệnh */
+.left-panel {
+    width: 320px;          /* Chiều rộng cố định */
+    min-width: 280px;
+    max-width: 350px;
+    flex-shrink: 0;        /* Không co lại */
+}
+
+/* Panel phải: CHIẾM DIỆN TÍCH LỚN NHẤT */
+.right-panel {
+    flex: 1;               /* Mở rộng tối đa */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;          /* Quan trọng: cho phép co lại nếu cần */
+}
+
+.right-panel .section-block {
+    width: 100%;       /* mỗi section-block chiếm full width panel */
+}
+
+.section-block {
+    background: #121212;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+}
+
+.section-block.chart-block {
+    flex: 1;               /* Chiếm hết chiều cao còn lại */
+    display: flex;
+    flex-direction: column;
+    min-height: 500px;
+}
+
+/* Chart container tự chiếm tối đa chiều cao */
+.dashboard-body {
+    height: 600px;  
+    display: flex;
+}
+
+/* Responsive tablet */
+@media (max-width: 900px) {
+    .transaction-layout {
+        flex-direction: column;
+    }
+    .left-panel {
+        width: 100%;
+        max-width: 100%;
+    }
+    .right-panel {
+        width: 100%;
+    }
+}
+
+.chart-block {
+    width: 100%;      /* chiếm full width parent */
+    flex: 1;          /* mở rộng chiều cao theo parent nếu cần */
+    min-height: 600px;
+    background: #121212;
+}
