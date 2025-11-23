@@ -29,6 +29,7 @@ async def place_order(order_data: OrderCreate, db: AsyncSession = Depends(get_as
         "stock_symbol": order_data.stock_symbol.upper(),
         "order_type": order_data.order_type.upper(),
         "price": order_data.price,
+        "created_timestamp": datetime.utcnow(),
         "quantity": order_data.quantity,
         "action_type": "NEW"
     }
