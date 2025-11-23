@@ -45,17 +45,26 @@ async def process_event(event: dict, session: AsyncSession):
         result = await session.execute(stmt_select)
         quantity = result.scalar_one_or_none()
         if quantity is not None:
-            filled_quantity = event.get('filled_quantity_at_event', 0)
-            remaining_quantity = quantity - filled_quantity
+            status = event.get("status_at_event")
 
-            stmt_update = update(Order).where(Order.order_id == order_id).values(
-                status=event.get('status_at_event'), 
-                filled_quantity=filled_quantity,
-                filled_price_avg=Decimal(str(event.get('filled_price_avg_at_event', '0.0'))),
-                quantity=remaining_quantity, 
-                last_updated_timestamp=parser.isoparse(event.get('event_timestamp')),
-            )
-            await session.execute(stmt_update)
+            if status == "CANCELED":
+                stmt_update = update(Order).where(Order.order_id == order_id).values(
+                    status=event.get('status_at_event'), 
+                    last_updated_timestamp=parser.isoparse(event.get('event_timestamp')),
+                )
+                await session.execute(stmt_update)
+            else:
+                filled_quantity = event.get('filled_quantity_at_event', 0)
+                remaining_quantity = quantity - filled_quantity
+
+                stmt_update = update(Order).where(Order.order_id == order_id).values(
+                    status=event.get('status_at_event'), 
+                    filled_quantity=filled_quantity,
+                    filled_price_avg=Decimal(str(event.get('filled_price_avg_at_event', '0.0'))),
+                    quantity=remaining_quantity, 
+                    last_updated_timestamp=parser.isoparse(event.get('event_timestamp')),
+                )
+                await session.execute(stmt_update)
         await session.commit()
         logger.info(f"Transaction committed for order_id: {order_id}")
     except Exception as e:
