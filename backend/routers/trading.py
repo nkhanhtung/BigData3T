@@ -54,7 +54,7 @@ async def cancel_order(order_id: uuid.UUID, db: AsyncSession = Depends(get_async
     if not existing_order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
 
-    if existing_order.status not in ["PENDING"]:
+    if existing_order.status not in ["PENDING", "PARTIALLY_FILLED"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot cancel order with status '{existing_order.status}'"

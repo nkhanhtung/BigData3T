@@ -88,6 +88,7 @@ async def login_user(
     return UserLogin(
         user_name=user.user_name,
         user_email=user.user_email,
+        user_id = user.user_id,
         current_token=access_token,
         token_type="bearer"
     )
