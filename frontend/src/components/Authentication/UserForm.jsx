@@ -38,9 +38,8 @@ const UserForm = ({ type, isActive }) => {
 
         // LƯU LẠI TOKEN
         const token = res.data.current_token;
+        const userId = res.data.user_id;
         sessionStorage.setItem('user_token', token);
-        const decoded = jwtDecode(token);
-        const userId = decoded.user_id;
         sessionStorage.setItem('user_id', userId);
         alert('Đăng nhập thành công!');
         navigate('/homepage', { replace: true });
