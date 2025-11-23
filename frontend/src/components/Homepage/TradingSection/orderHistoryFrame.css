@@ -98,3 +98,66 @@
     display: inline-block;
     width: 60px; /* chiều rộng tương đương nút hủy để bảng không nhảy */
 }
+
+/* Overlay nền mờ */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+/* Hộp xác nhận */
+.confirm-box {
+    background: #1e1e1e;
+    padding: 20px 24px;
+    border-radius: 8px;
+    text-align: center;
+    width: 360px;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+.confirm-box h3 {
+    margin-bottom: 10px;
+    color: #ff5252;
+}
+
+.confirm-actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.confirm-yes {
+    background-color: #ff5252;
+    padding: 8px 16px;
+    color: white;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.confirm-no {
+    background-color: #444;
+    padding: 8px 16px;
+    color: white;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.confirm-yes:hover {
+    background-color: #ff6f6f;
+}
+
+.confirm-no:hover {
+    background-color: #666;
+}
