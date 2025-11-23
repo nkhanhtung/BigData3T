@@ -41,37 +41,6 @@ async def place_order(order_data: OrderCreate, db: AsyncSession = Depends(get_as
         logger.error(f"Error placing order: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to place order")
 
-
-@router.put("/{order_id}/update", response_model=OrderInDB)
-async def update_order(order_id: uuid.UUID, order_update_data: OrderUpdate, db: AsyncSession = Depends(get_async_session)):
-    existing_order = await get_order_by_id_db(db, order_id)
-    if not existing_order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-    
-    if existing_order.current_status not in ["PENDING", "PARTIALLY_FILLED"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot update order with status '{existing_order.current_status}'"
-        )
-
-    kafka_message = {
-        "order_id": str(order_id),
-        "price": order_update_data.price,
-        "quantity": order_update_data.quantity,
-        "action_type": "UPDATE",
-        "user_id": None, "stock_symbol": None, "order_type": None,
-        "created_timestamp": datetime.utcnow().isoformat()
-    }
-
-    try:
-        await send_message(settings_kafka.KAFKA_TOPIC_ORDERS_RAW, kafka_message)
-        logger.info(f"UPDATE command sent to Kafka for order {order_id}")
-        return existing_order
-    except Exception as e:
-        logger.error(f"Error sending UPDATE command to Kafka for order {order_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send order update command")
-
-
 @router.post("/{order_id}/cancel", response_model=OrderInDB)
 async def cancel_order(order_id: uuid.UUID, db: AsyncSession = Depends(get_async_session)):
     existing_order = await get_order_by_id_db(db, order_id)
@@ -86,12 +55,18 @@ async def cancel_order(order_id: uuid.UUID, db: AsyncSession = Depends(get_async
     logger.info("Start add kafka_message")
     kafka_message = {
         "order_id": str(order_id),
-        "status_at_event": "CANCELED", 
-        "event_timestamp": datetime.utcnow().isoformat(),
+        "user_id": str(existing_order.user_id),
+        "stock_symbol": existing_order.stock_symbol,
+        "order_type": existing_order.order_type,  # BUY/SELL
+        "price": float(existing_order.price),
+        "quantity": int(existing_order.quantity),
+        "action_type": "CANCEL",
+        "event_timestamp": datetime.utcnow().isoformat()
     }
+
     logger.info("Add kafka_message successfully")
     try:
-        await send_message(settings_kafka.KAFKA_TOPIC_ORDER_UPDATES, kafka_message)
+        await send_message(settings_kafka.KAFKA_TOPIC_ORDERS_RAW, kafka_message)
         logger.info(f"CANCEL command sent to Kafka for order {order_id}")
         return existing_order
     except Exception as e:
