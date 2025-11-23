@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -72,9 +71,7 @@ async def login_user(
                 detail=f"Too many failed login attempts. User is blocked for {settings_redis.BLOCK_TIME_MINUTES} minutes."
             )
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
-
-    await redis_client.delete(f"user:{user.user_email}:failed")
-
+    
     access_token = create_access_token(data={"sub": user.user_email})
     old_token = await redis_client.get(f"user:{user.user_email}:token")
     if old_token:
@@ -91,6 +88,7 @@ async def login_user(
     return UserLogin(
         user_name=user.user_name,
         user_email=user.user_email,
+        user_id = user.user_id,
         current_token=access_token,
         token_type="bearer"
     )
@@ -107,11 +105,6 @@ async def logout_user(token: str = Depends(oauth2_scheme),
         if not user_email:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         
-        await mongo_collection.insert_one({
-        "user_email": user_email,
-        "logout_time": datetime.utcnow(),
-        "success": True
-    }) 
         await redis_client.delete(token)
         await redis_client.delete(f"user:{user_email}:token")
 

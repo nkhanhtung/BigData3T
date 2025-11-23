@@ -15,7 +15,7 @@ class OrderBase(BaseModel):
     
     # Sử dụng condecimal cho kiểu Numeric(10, 2)
     price: condecimal(max_digits=10, decimal_places=2) = Field(..., gt=0, description="Price per share at the time of order")
-    quantity: int = Field(..., gt=0, description="Number of shares to trade")
+    quantity: int = Field(..., ge=0, description="Number of shares to trade")
 
 class OrderCreate(OrderBase):
     """Schema for creating a new order."""
@@ -26,7 +26,7 @@ class OrderUpdate(BaseModel):
     """Test API when upload docker remove order_id, action, status"""
     order_id: UUID
     action: str
-    quantity: Optional[int] = Field(None, gt=0, description="New quantity of shares to trade")
+    quantity: Optional[int] = Field(None, ge=0, description="New quantity of shares to trade")
     price: Optional[condecimal(max_digits=10, decimal_places=2)] = Field(None, gt=0, description="New price per share")
     status: Optional[ORDER_STATUSES] = Field(None, description="New status of the order")
     
