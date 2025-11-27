@@ -199,6 +199,10 @@ Python Flask/FastAPI - Xử lý nghiệp vụ
 
 Apache Spark - Xử lý dữ liệu lớn
 
+Apache Kafka - Truyền dữ liệu theo thời gian thực
+
+Apache Flink - Xử lý dòng thời gian thực
+
 Machine Learning - Dự đoán giá
 
 Redis - Cache hiệu năng cao
