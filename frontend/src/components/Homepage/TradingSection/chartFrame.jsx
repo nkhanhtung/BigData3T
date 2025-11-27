@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import axios from "axios";
 import './chartFrame.css';
 
@@ -16,9 +16,85 @@ const ChartFrame = ({ stockSymbol }) => {
     const [ohlcvData, setOhlcvData] = useState([]);
     const [activeTab, setActiveTab] = useState("overview");
     const [chartType, setChartType] = useState("candlestick");
-    const [period, setPeriod] = useState("day"); // day, week, month
+    const [period, setPeriod] = useState("day");
+    const wsRef = useRef(null);
 
-    // Lấy data từ backend
+    // ========== WebSocket Real-time Connection ==========
+    useEffect(() => {
+        if (!stockSymbol) return;
+
+        // Kết nối WebSocket
+        const ws = new WebSocket("ws://localhost:8000/realtime/ws/candlestick-ohlc");
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+            console.log("WebSocket connected for real-time OHLC updates");
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const newData = JSON.parse(event.data);
+                console.log("Received real-time OHLC:", newData);
+                console.log("Current stock:", stockSymbol);
+                console.log("Match:", newData.stock_symbol === stockSymbol);
+
+                // Kiểm tra nếu data là của cổ phiếu đang xem
+                if (newData.stock_symbol === stockSymbol) {
+                    console.log("Updating chart for", stockSymbol);
+                    setOhlcvData(prevData => {
+                        // Tìm xem ngày này đã tồn tại chưa
+                        const existingIndex = prevData.findIndex(
+                            item => item.date === newData.date
+                        );
+
+                        if (existingIndex !== -1) {
+                            // Cập nhật dữ liệu ngày hiện tại
+                            const updated = [...prevData];
+                            updated[existingIndex] = {
+                                ...updated[existingIndex],
+                                close_price: newData.close_price,
+                                high_price: Math.max(updated[existingIndex].high_price, newData.high_price),
+                                low_price: Math.min(updated[existingIndex].low_price, newData.low_price),
+                                volumes: updated[existingIndex].volumes + (newData.volumes || 0)
+                            };
+                            return updated;
+                        } else {
+                            // Thêm dữ liệu ngày mới
+                            return [...prevData, {
+                                date: newData.date,
+                                open_price: newData.open_price,
+                                close_price: newData.close_price,
+                                high_price: newData.high_price,
+                                low_price: newData.low_price,
+                                volumes: newData.volumes || 0
+                            }].sort((a, b) => 
+                                new Date(a.date).getTime() - new Date(b.date).getTime()
+                            );
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("❌ Error parsing WebSocket message:", err);
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error("❌ WebSocket error:", error);
+        };
+
+        ws.onclose = () => {
+            console.log("🔌 WebSocket disconnected");
+        };
+
+        // Cleanup khi component unmount hoặc stockSymbol thay đổi
+        return () => {
+            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                ws.close();
+            }
+        };
+    }, [stockSymbol]);
+
+    // Lấy data ban đầu từ backend
     useEffect(() => {
         if (!stockSymbol) return;
 
@@ -45,7 +121,7 @@ const ChartFrame = ({ stockSymbol }) => {
         const last = sorted[sorted.length - 1];
 
         return {
-            date: last.date, // Lấy ngày cuối của chu kỳ
+            date: last.date,
             open_price: first.open_price,
             close_price: last.close_price,
             high_price: Math.max(...sorted.map(d => d.high_price)),
@@ -62,7 +138,6 @@ const ChartFrame = ({ stockSymbol }) => {
             return ohlcvData;
         }
 
-        // Sắp xếp dữ liệu theo ngày tăng dần
         const sortedData = [...ohlcvData].sort((a, b) => 
             new Date(a.date).getTime() - new Date(b.date).getTime()
         );
@@ -76,21 +151,17 @@ const ChartFrame = ({ stockSymbol }) => {
             let periodKey;
 
             if (period === "week") {
-                // Lấy tuần trong năm (ISO week)
                 const startOfYear = new Date(date.getFullYear(), 0, 1);
                 const weekNum = Math.ceil((((date - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
                 periodKey = `${date.getFullYear()}-W${weekNum}`;
             } else if (period === "month") {
-                // Lấy tháng-năm
                 periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
             }
 
             if (currentPeriodKey !== periodKey) {
-                // Xử lý nhóm trước đó
                 if (currentGroup.length > 0) {
                     aggregated.push(aggregateGroup(currentGroup));
                 }
-                // Bắt đầu nhóm mới
                 currentGroup = [item];
                 currentPeriodKey = periodKey;
             } else {
@@ -98,7 +169,6 @@ const ChartFrame = ({ stockSymbol }) => {
             }
         });
 
-        // Xử lý nhóm cuối cùng
         if (currentGroup.length > 0) {
             aggregated.push(aggregateGroup(currentGroup));
         }
@@ -106,7 +176,6 @@ const ChartFrame = ({ stockSymbol }) => {
         return aggregated;
     }, [ohlcvData, period]);
 
-    // Nếu chưa chọn mã cổ phiếu -> hiển thị khung trống lớn
     if (!stockSymbol) {
         return (
             <div className="empty-chart">
@@ -115,7 +184,6 @@ const ChartFrame = ({ stockSymbol }) => {
         );
     }
 
-    // Nếu có mã mà chưa load data -> loading
     if (!infoData) {
         return (
             <div className="empty-chart">
@@ -183,6 +251,9 @@ const ChartFrame = ({ stockSymbol }) => {
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+            duration: 750 // Hiệu ứng mượt mà khi cập nhật
+        },
         plugins: {
             legend: { display: true },
             tooltip: { 
@@ -215,7 +286,6 @@ const ChartFrame = ({ stockSymbol }) => {
                     tooltipFormat: 'dd/MM/yyyy' 
                 },
                 min: defaultStart,
-                // max: now,
                 ticks: { maxTicksLimit: 20, autoSkip: true }
             },
             y: {
@@ -230,7 +300,10 @@ const ChartFrame = ({ stockSymbol }) => {
             {/* HEADER */}
             <div className="dashboard-header">
                 <div>
-                    <h2>{infoData.stock_symbol} ({infoData.market_name})</h2>
+                    <h2>
+                        {infoData.stock_symbol} ({infoData.market_name})
+                        <span className="live-indicator" title="Cập nhật real-time">🔴 LIVE</span>
+                    </h2>
                     <p>{infoData.stock_name}</p>
                 </div>
                 <button className="btn-chart">Xem phân tích chi tiết</button>
