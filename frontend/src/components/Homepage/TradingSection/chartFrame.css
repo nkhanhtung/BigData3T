@@ -301,3 +301,21 @@
 
     background: #0c0c0c;
 }
+
+.live-indicator {
+    display: inline-block;
+    margin-left: 12px;
+    font-size: 0.75rem;
+    color: #ff4444;
+    animation: pulse 2s ease-in-out infinite;
+    vertical-align: middle;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
