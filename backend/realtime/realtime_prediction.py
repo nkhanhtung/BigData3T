@@ -9,7 +9,9 @@ from sqlalchemy import select, text
 import numpy as np
 from models.daily_stock_price import DailyStockPrice
 from models.monthly_stock_price import MonthlyStockPrice
+from models.p1_stock_price import P1StockPrice
 from sqlalchemy import desc
+from fastapi import WebSocket
 
 
 class ModelManager:
@@ -58,6 +60,22 @@ class ModelManager:
         self.scaler_cache[symbol] = scaler
         return scaler
 
+    
+    async def fetch_last_n_minutes(self, stock_symbol: str, n: int, db: AsyncSession) -> np.ndarray:
+        """Lấy n ngày dữ liệu close_price gần nhất"""
+        query = (
+            select(P1StockPrice.close_price)
+            .where(P1StockPriceStockPrice.stock_symbol == stock_symbol)
+            .order_by(desc(P1StockPrice.date))
+            .limit(n)
+        )
+        result = await db.execute(query)
+        rows: List[float] = result.scalars().all()
+        if len(rows) < n:
+            raise ValueError(f"Not enough data for {symbol}, need {n} rows")
+        
+        closes = np.array(rows[::-1], dtype=np.float32)
+        return closes
 
 
     async def fetch_last_n_days(self, stock_symbol: str, n: int, db: AsyncSession) -> np.ndarray:

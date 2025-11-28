@@ -6,6 +6,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from datetime import datetime
+from sqlalchemy import DateTime
 
 DATABASE_URL = (
     "postgresql+asyncpg://neondb_owner:npg_X3MpLju8nzxi"
@@ -13,7 +14,7 @@ DATABASE_URL = (
 )
 
 # Create async engine
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(DATABASE_URL, echo=True,connect_args={"prepared_statement_cache_size": 0})
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 # Metadata
@@ -23,10 +24,10 @@ metadata = MetaData()
 # DEFINE TABLE - NO stock_id
 # ================================
 daily_stock_table = Table(
-    "monthly_stocks_prices",
+    "p_stocks_prices",
     metadata,
     Column("stock_symbol", String(3), nullable=False),
-    Column("date", Date, nullable=False),
+    Column("date", DateTime, nullable=False),
     Column("open_price", Numeric(10, 2), nullable=False),
     Column("close_price", Numeric(10, 2), nullable=False),
     Column("high_price", Numeric(10, 2), nullable=False),
@@ -47,7 +48,7 @@ async def load_csv(file_path: str, stock_symbol: str):
         async with session.begin():
             for _, row in df.iterrows():
 
-                row_date = datetime.strptime(row["date"], "%Y-%m-%d").date()
+                row_date = datetime.strptime(row["date"], "%Y-%m-%d %H:%M:%S")
 
                 # Check duplicate
                 stmt_check = select(daily_stock_table).where(
@@ -60,7 +61,7 @@ async def load_csv(file_path: str, stock_symbol: str):
 
                 # Insert row
                 stmt_insert = insert(daily_stock_table).values(
-                    stock_symbol=stock_symbol,
+                    stock_symbol=stock_symbol[:3],
                     date=row_date,
                     open_price=row["open"],
                     high_price=row["high"],
@@ -83,16 +84,17 @@ async def load_multiple_csv(folder_path: str, file_list: list):
         stock_symbol = f.replace(".csv", "").upper()
         file_path = f"{folder_path}/{f}"
         await load_csv(file_path, stock_symbol)
-
+    
 
 # ================================
 # MAIN
 # ================================
 if __name__ == "__main__":
-    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/data_monthly/all"
+    folder = "/home/tungcutenhoem/Documents/ProjectBigData/BigData3T/datasets/Banking"
 
     files = [
-        "ACB.csv","BID.csv","CII.csv","CTD.csv","CTG.csv","FCN.csv","FTS.csv","HBC.csv","HCM.csv","HDB.csv","HHV.csv","HVN.csv","KDH.csv","MBB.csv","NVL.csv","PDR.csv","SHB.csv","SHS.csv","STB.csv","TCB.csv","VCB.csv","VCI.csv","VHM.csv","VIC.csv","VJC.csv","VOS.csv","VND.csv","VPB.csv","VSC.csv","VRE.csv","VTP.csv"
+        "ACB.csv",
+"BID.csv"  
     ]
 
     asyncio.run(load_multiple_csv(folder, files))

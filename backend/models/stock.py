@@ -16,3 +16,4 @@ class Stock(Base):
     stock_dailies = relationship("DailyStockPrice", back_populates="dailies_stock")
     stock_orders = relationship("Order", back_populates="orders_stock")
     stock_monthlies = relationship("MonthlyStockPrice", back_populates="monthlies_stock")
+    stock_1ps = relationship("P1StockPrice", back_populates="p1s_stock")
