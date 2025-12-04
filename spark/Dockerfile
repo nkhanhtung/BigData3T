@@ -1,6 +1,8 @@
 # ============================================
 # Base Python + Java
 # ============================================
+
+
 FROM python:3.10-slim-bullseye
 
 # Install Java (required for Spark) + wget
@@ -11,6 +13,14 @@ RUN apt-get update && \
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH=$JAVA_HOME/bin:$PATH
 
+COPY spark-3.5.7-bin-hadoop3.tgz /tmp/
+
+# Giải nén và đặt vào /opt/spark
+RUN tar -xzf /tmp/spark-3.5.7-bin-hadoop3.tgz -C /opt/ \
+    && mv /opt/spark-3.5.7-bin-hadoop3 /opt/spark \
+    && rm /tmp/spark-3.5.7-bin-hadoop3.tgz
+    
+ENV PATH=/opt/spark/bin:/opt/spark/sbin:$JAVA_HOME/bin:$PATH
 # ============================================
 # Install Python packages
 # ============================================

@@ -273,6 +273,7 @@ services:
     volumes:
       - ./backend:/app/backend
       - ./spark:/app/spark
+      - ./spark/event_logs:/opt/spark/event_logs  
     command: python spark/services/alerts/indicator_alert.py
     restart: "no"
 
@@ -303,6 +304,23 @@ services:
       - ./spark:/app/spark
     command: python spark/services/visualization/ohlc_visualization.py
     restart: "no"
+
+  spark-history-server:
+    image: spark-base-all
+    container_name: spark-history-server
+    ports:
+      - "18080:18080"   # UI history server
+    depends_on:
+      # - spark-volume-alert
+      # - spark-price-alert
+      - spark-indicator-alert
+    environment:
+      SPARK_HISTORY_OPTS: "-Dspark.history.fs.logDirectory=/opt/spark/event_logs"
+    volumes:
+      - ./spark/event_logs:/opt/spark/event_logs  # Nơi lưu event log của Spark
+    command: bash -c "/opt/spark/sbin/start-history-server.sh"
+    restart: "always"
+
 
 
   # 10. FastAPI Backend (Ứng dụng của bạn) ---
@@ -389,6 +407,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     command: npm run dev -- --host
+    
 
 # --- Volumes để lưu trữ dữ liệu bền vững ---
 volumes:

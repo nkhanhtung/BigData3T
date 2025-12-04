@@ -54,7 +54,7 @@ const OrderHistory = () => {
 
     useEffect(() => {
         fetchOrders();
-        const interval = setInterval(fetchOrders, 3000);
+        const interval = setInterval(fetchOrders, 500);
         return () => clearInterval(interval);
     }, [userId]);
 

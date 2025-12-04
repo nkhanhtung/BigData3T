@@ -15,4 +15,5 @@ COPY plugins/ /opt/airflow/plugins/
 COPY crawlers/ /opt/airflow/crawlers/
 COPY logs/ /opt/airflow/logs/
 COPY datasets/ /opt/airflow/datasets/
+COPY trains/ /opt/airflow/trains
 # Export PYTHONPATH để chắc chắn Airflow tìm được module crawlers

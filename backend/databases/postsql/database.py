@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import text
 import logging
+from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,16 @@ async def get_async_session():
         logger.warning("AsyncSessionLocal not initialized. Calling get_db_connection().")
         await get_db_connection() 
 
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+@asynccontextmanager
+async def get_async_session_cm():
+    if AsyncSessionLocal is None:
+        await get_db_connection()
     async with AsyncSessionLocal() as session:
         try:
             yield session

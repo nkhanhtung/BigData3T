@@ -13,7 +13,6 @@ import {
 } from "chart.js";
 import "./predictionPage.css";
 
-// Đăng ký Chart.js
 ChartJS.register(
     CategoryScale,
     LinearScale,
@@ -31,40 +30,28 @@ const PredPage = () => {
     const [selectedStock, setSelectedStock] = useState(null);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [predictionType, setPredictionType] = useState("realtime");
-    const [predictions, setPredictions] = useState([]);
+
     const [historicalData, setHistoricalData] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [stockInfo, setStockInfo] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const [realtimePredictions, setRealtimePredictions] = useState([]);
+    const [staticPredictions, setStaticPredictions] = useState([]);
 
     const wsRef = useRef(null);
     const searchContainerRef = useRef(null);
 
-    // Click ra ngoài để đóng suggestions
+    // Fetch stock list
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
-                setShowSuggestions(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    // Lấy danh sách cổ phiếu
-    useEffect(() => {
-        const fetchStocks = async () => {
-            try {
-                const res = await axios.get("http://localhost:8000/visualization/stocks/list");
+        axios.get("http://localhost:8000/visualization/stocks/list")
+            .then((res) => {
                 setStocks(res.data.stocks);
                 setFilteredStocks(res.data.stocks);
-            } catch (err) {
-                console.error("Lỗi lấy danh sách cổ phiếu:", err);
-            }
-        };
-        fetchStocks();
+            })
+            .catch((err) => console.error("Error fetching stocks:", err));
     }, []);
 
-    // Lọc danh sách
+    // Filter stocks
     useEffect(() => {
         const filtered = stocks.filter(
             (s) =>
@@ -76,197 +63,256 @@ const PredPage = () => {
 
     // WebSocket realtime
     useEffect(() => {
-    if (predictionType !== "realtime" || !selectedStock) return;
+        if (predictionType !== "realtime" || !selectedStock) return;
 
-    // Nếu WS cũ tồn tại, đóng trước khi mở WS mới cho stock khác
-    if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-    }
+        if (wsRef.current) wsRef.current.close();
 
-    const ws = new WebSocket(
-        `ws://localhost:8000/prediction/ws/realtime/predict/${selectedStock.stock_symbol}`
-    );
-    wsRef.current = ws;
+        const ws = new WebSocket(
+            `ws://localhost:8000/prediction/ws/realtime/predict/${selectedStock.stock_symbol}`
+        );
+        wsRef.current = ws;
 
-    ws.onopen = () => console.log("WS connected for", selectedStock.stock_symbol);
-    ws.onmessage = (event) => {
-        try {
+        ws.onopen = () => console.log("Realtime WS connected");
+        ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            if (data.prediction !== undefined) {
-                setPredictions(prev => [...prev, data.prediction]);
+
+            if (data.historical !== undefined && historicalData.length === 0) {
+                // data.historical là giá thực tế tiếp theo
+                setHistoricalData((prev) => [...prev, ...data.historical].slice(0, 60));
             }
-        } catch (err) {
-            console.error("WS parse error", err);
-        }
-    };
-    ws.onclose = () => console.log("WS closed for", selectedStock.stock_symbol);
-    ws.onerror = (err) => console.error("WS error", err);
+            if (data.prediction !== undefined) {
+                setRealtimePredictions((prev) => [...prev, data.prediction]);
+            }
+            if (data.real !== undefined) {
+                const fixedReal = {
+                    ...data.real,
+                    date: typeof data.real.date === "number"
+                        ? new Date(data.real.date * 1000).toISOString()
+                        : data.real.date,
+                };
 
-    // Cleanup chỉ khi component unmount
-    return () => {
-        if (wsRef.current) {
-            wsRef.current.close();
-            wsRef.current = null;
-        }
-    };
-}, [selectedStock]); // Chỉ phụ thuộc vào stock, type realtime mặc định
+                setHistoricalData((prev) => {
+                    const normalized = prev.map(d => ({
+                        ...d,
+                        date: typeof d.date === "number"
+                            ? new Date(d.date * 1000).toISOString()
+                            : d.date,
+                    }));
+
+                    return [...normalized, fixedReal].slice(-60);
+                });
+            }
 
 
-    // Chọn stock
+        };
+
+        return () => ws.close();
+    }, [selectedStock, predictionType]);
+
+    // Select stock
     const handleSelectStock = async (stock) => {
         setSelectedStock(stock);
-        setSearchQuery(`${stock.stock_symbol} - ${stock.stock_name}`);
         setShowSuggestions(false);
+        setSearchQuery(`${stock.stock_symbol} - ${stock.stock_name}`);
 
-        try {
-            const infoRes = await axios.get(
-                `http://localhost:8000/visualization/info/${stock.stock_symbol}`
+        // Fetch stock info
+        const info = await axios.get(`http://localhost:8000/visualization/info/${stock.stock_symbol}`);
+        setStockInfo(info.data);
+
+        // Load historical data
+        if (predictionType === "realtime") {
+            const hist = await axios.get(
+                `http://localhost:8000/visualization/ohlcv_1p/${stock.stock_symbol}`
             );
-            setStockInfo(infoRes.data);
-        } catch (err) {
-            console.error("Lỗi lấy thông tin cổ phiếu:", err);
-        }
-
-        try {
-            const histRes = await axios.get(
+            console.log("historicalData realtime:", hist.data.ohlc);
+            setHistoricalData(hist.data.ohlc || []);
+        } else {
+            const hist = await axios.get(
                 `http://localhost:8000/visualization/ohlcv/${stock.stock_symbol}`
             );
-            setHistoricalData(histRes.data.ohlc);
-        } catch (err) {
-            console.error("Lỗi lấy dữ liệu lịch sử:", err);
+            setHistoricalData(hist.data.ohlc || []);
         }
+
+        // Reset predictions
+        setRealtimePredictions([]);
+        setStaticPredictions([]);
 
         if (predictionType !== "realtime") {
             await fetchPrediction(stock.stock_symbol, predictionType);
-        } else {
-            setPredictions([]);
         }
     };
 
-    // Lấy dự đoán REST cho các loại khác
+    // Fetch static prediction
     const fetchPrediction = async (symbol, type) => {
         setLoading(true);
         try {
-            const endpoint = `http://localhost:8000/prediction/${type}/${symbol}`;
-            const res = await axios.get(endpoint);
-            setPredictions(res.data.predictions);
-        } catch (err) {
-            console.error("Lỗi lấy dự đoán:", err);
-            alert("Không thể lấy dự đoán. Vui lòng thử lại!");
+            const res = await axios.get(
+                `http://localhost:8000/prediction/${type}/${symbol}`
+            );
+            setStaticPredictions(res.data.predictions || []);
+        } catch {
+            alert("Không thể lấy dự đoán!");
         } finally {
             setLoading(false);
         }
     };
 
-    // Thay đổi loại dự đoán
+    // Change prediction type
     const handlePredictionTypeChange = async (type) => {
         setPredictionType(type);
-        if (type !== "realtime" && selectedStock) {
-            await fetchPrediction(selectedStock.stock_symbol, type);
-        } else if (type === "realtime") {
-            setPredictions([]);
-        }
-    };
+        setRealtimePredictions([]);
+        setStaticPredictions([]);
 
-    // Chuyển dữ liệu ngày -> tháng
-    const convertDailyToMonthly = (dailyData) => {
-        const monthlyMap = {};
-        dailyData.forEach((item) => {
-            const yearMonth = item.date.substring(0, 7);
-            if (!monthlyMap[yearMonth]) monthlyMap[yearMonth] = { date: yearMonth, prices: [], volumes: [] };
-            monthlyMap[yearMonth].prices.push(item.close_price);
-            if (item.volumes) monthlyMap[yearMonth].volumes.push(item.volumes);
-        });
-        return Object.values(monthlyMap)
-            .map((month) => ({
-                date: month.date,
-                close_price: month.prices.reduce((a, b) => a + b, 0) / month.prices.length,
-                volumes: month.volumes.length > 0 ? month.volumes.reduce((a, b) => a + b, 0) / month.volumes.length : 0,
-            }))
-            .sort((a, b) => a.date.localeCompare(b.date));
-    };
+        if (!selectedStock) return;
 
-    // Chuẩn bị dữ liệu chart
-    const getChartData = () => {
-        if (!selectedStock || predictions.length === 0) return null;
-        let historicalDates, historicalPrices;
-        const isMonthly = predictionType === "medium-term" || predictionType === "long-term";
-
-        if (isMonthly) {
-            const monthlyData = convertDailyToMonthly(historicalData).slice(-24);
-            historicalDates = monthlyData.map((d) => d.date);
-            historicalPrices = monthlyData.map((d) => d.close_price);
+        if (type === "realtime") {
+            const hist = await axios.get(
+                `http://localhost:8000/visualization/ohlcv_1p/${selectedStock.stock_symbol}`
+            );
+            setHistoricalData(hist.data.ohlc || []);
         } else {
-            const last60 = historicalData.slice(-60);
-            historicalDates = last60.map((d) => d.date);
-            historicalPrices = last60.map((d) => d.close_price);
+            const hist = await axios.get(
+                `http://localhost:8000/visualization/ohlcv/${selectedStock.stock_symbol}`
+            );
+            setHistoricalData(hist.data.ohlc || []);
+            await fetchPrediction(selectedStock.stock_symbol, type);
+        }
+    };
+
+    // Prepare chart data
+    const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+
+    const [predictionTimes, setPredictionTimes] = useState([]);
+
+    // ... import và code cũ
+
+    // Thay thế useEffect tính chartData bằng đoạn này:
+    // ... import và code cũ
+
+    // Thay thế toàn bộ useEffect tính chartData bằng đoạn này:
+    useEffect(() => {
+        if (!selectedStock || historicalData.length === 0) return;
+
+        const preds = predictionType === "realtime" ? realtimePredictions : staticPredictions;
+        const slicedHistory = historicalData.slice(-60);
+
+        // --- HÀM FORMAT THÔNG MINH HƠN ---
+        const formatLabel = (dateInput) => {
+            const str = String(dateInput);
+            
+            if (predictionType === "realtime") {
+                // Realtime: Cắt lấy GIỜ PHÚT (HH:mm) -> vị trí 11 đến 16
+                // Ví dụ: "2023-12-01T10:15:00" -> "10:15"
+                return str.substring(11, 16);
+            } else {
+                // Các loại hạn khác: Cắt lấy NGÀY THÁNG (YYYY-MM-DD) -> vị trí 0 đến 10
+                // Ví dụ: "2023-12-01T00:00:00" -> "2023-12-01"
+                return str.substring(0, 10);
+            }
+        };
+
+        // 1. Tạo trục X (Labels) từ dữ liệu lịch sử
+        const labels = slicedHistory.map(d => formatLabel(d.date));
+        
+        // 2. Dữ liệu giá thực tế
+        const historicalPrices = slicedHistory.map(d => d.close_price ?? d);
+
+        // 3. Xử lý dữ liệu dự đoán
+        let predictionData = [];
+
+        if (predictionType === "realtime") {
+            // Realtime: Overlay (Đè lên)
+            const emptyCount = Math.max(0, historicalPrices.length - preds.length);
+            predictionData = [
+                ...Array(emptyCount).fill(null), 
+                ...preds 
+            ];
+            predictionData = predictionData.slice(-historicalPrices.length);
+
+        } else {
+            // Short/Medium/Long-term: Vẽ nối tiếp tương lai
+            const isMonthly = predictionType === "medium-term" || predictionType === "long-term";
+            
+            // Tính toán ngày tương lai để hiển thị label cho phần dự đoán
+            // Lấy ngày cuối cùng của lịch sử để cộng thêm
+            const lastHistoryDateStr = slicedHistory[slicedHistory.length - 1].date; 
+            const lastDate = new Date(lastHistoryDateStr); 
+
+            const futureLabels = preds.map((_, idx) => {
+                const nextDate = new Date(lastDate);
+                
+                if (isMonthly) {
+                     // Nếu là monthly thì cộng tháng
+                    nextDate.setMonth(nextDate.getMonth() + (idx + 1));
+                } else {
+                    // Nếu là daily thì cộng ngày
+                    nextDate.setDate(nextDate.getDate() + (idx + 1));
+                }
+                
+                // Format ngày tương lai về dạng YYYY-MM-DD cho đồng bộ với trục X
+                return nextDate.toISOString().slice(0, 10);
+            });
+
+            // Nối label tương lai vào trục X
+            labels.push(...futureLabels);
+            
+            // Nối dữ liệu dự đoán vào sau dữ liệu lịch sử
+            predictionData = [...Array(historicalPrices.length).fill(null), ...preds];
         }
 
-        const predictionLabels = predictions.map((_, idx) => {
-            if (predictionType === "realtime") return `+${idx + 1}m`;
-            if (predictionType === "short-term") return `+${idx + 1}d`;
-            if (predictionType === "medium-term") return `+${idx + 1}M`;
-            if (predictionType === "long-term") return `+${idx + 1}M`;
-            return `+${idx + 1}`;
-        });
-
-        return {
-            labels: [...historicalDates, ...predictionLabels],
+        // Cập nhật Chart
+        setChartData({
+            labels: labels,
             datasets: [
                 {
-                    label: isMonthly ? "Giá lịch sử (theo tháng)" : "Giá lịch sử (theo ngày)",
-                    data: [...historicalPrices, ...Array(predictions.length).fill(null)],
+                    label: "Giá thực tế",
+                    data: historicalPrices,
                     borderColor: "rgb(75, 192, 192)",
-                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    pointRadius: 2,
                     tension: 0.1,
+                    order: 1,
                 },
                 {
                     label: "Dự đoán",
-                    data: [...Array(historicalDates.length).fill(null), ...predictions],
+                    data: predictionData,
                     borderColor: "rgb(255, 99, 132)",
-                    backgroundColor: "rgba(255, 99, 132, 0.2)",
-                    borderDash: [5, 5],
+                    backgroundColor: "rgba(255, 99, 132, 0.5)",
+                    pointRadius: 4,
+                    // Nếu không phải realtime thì dùng điểm tròn bình thường cho dễ nhìn
+                    pointStyle: predictionType === 'realtime' ? 'rectRot' : 'circle',
+                    pointBorderWidth: 2,
                     tension: 0.1,
+                    order: 0,
                 },
             ],
-        };
-    };
+        });
+    }, [historicalData, realtimePredictions, staticPredictions, predictionType, selectedStock]);
 
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { position: "top", labels: { color: "#e2e8f0" } },
-            title: {
-                display: true,
-                text: `Biểu đồ dự đoán giá ${selectedStock ? selectedStock.stock_symbol : ""}`,
-                color: "#e2e8f0",
-            },
-        },
-        scales: {
-            y: { ticks: { color: "#a0aec0" }, grid: { color: "#2d3748" } },
-            x: { ticks: { color: "#a0aec0" }, grid: { color: "#2d3748" } },
-        },
-    };
+    const displayPreds =
+        predictionType === "realtime" ? realtimePredictions : staticPredictions;
 
     return (
         <div className="pred-page">
             <header className="pred-header">
                 <h1>Dự đoán giá cổ phiếu</h1>
+
                 <div className="search-container" ref={searchContainerRef}>
                     <input
                         type="text"
-                        placeholder="Tìm kiếm mã hoặc tên cổ phiếu..."
+                        className="search-input"
+                        placeholder="Tìm mã cổ phiếu..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setShowSuggestions(true)}
-                        className="search-input"
                     />
                     {showSuggestions && filteredStocks.length > 0 && (
                         <ul className="suggestions-list">
                             {filteredStocks.slice(0, 10).map((stock) => (
-                                <li key={stock.stock_symbol} onClick={() => handleSelectStock(stock)} className="suggestion-item">
+                                <li
+                                    key={stock.stock_symbol}
+                                    className="suggestion-item"
+                                    onClick={() => handleSelectStock(stock)}
+                                >
                                     <strong>{stock.stock_symbol}</strong> - {stock.stock_name}
                                 </li>
                             ))}
@@ -277,8 +323,10 @@ const PredPage = () => {
 
             {stockInfo && (
                 <div className="stock-info">
-                    <h2>{stockInfo.stock_name} ({stockInfo.stock_symbol})</h2>
-                    <p>Ngành: {stockInfo.major} | Sàn: {stockInfo.market_name}</p>
+                    <h2>
+                        {stockInfo.stock_name} ({stockInfo.stock_symbol})
+                    </h2>
+                    <p>Ngành: {stockInfo.major}</p>
                 </div>
             )}
 
@@ -288,9 +336,9 @@ const PredPage = () => {
                         key={type}
                         className={predictionType === type ? "active" : ""}
                         onClick={() => handlePredictionTypeChange(type)}
-                        disabled={!selectedStock || loading}
+                        disabled={!selectedStock}
                     >
-                        {type === "realtime" && "Realtime (5 phút)"}
+                        {type === "realtime" && "Realtime (mỗi phút)"}
                         {type === "short-term" && "Ngắn hạn (15 ngày)"}
                         {type === "medium-term" && "Trung hạn (5 tháng)"}
                         {type === "long-term" && "Dài hạn (12 tháng)"}
@@ -300,32 +348,27 @@ const PredPage = () => {
 
             {loading && <div className="loading">Đang tải dự đoán...</div>}
 
-            {!loading && predictions.length > 0 && (
+            {!loading && historicalData.length > 0 && (
                 <div className="chart-container">
-                    <Line data={getChartData()} options={chartOptions} />
+                    <Line data={chartData} />
                 </div>
             )}
 
-            {!loading && predictions.length > 0 && (
+            {!loading && displayPreds.length > 0 && (
                 <div className="predictions-table">
                     <h3>Chi tiết dự đoán</h3>
                     <table>
                         <thead>
                             <tr>
                                 <th>Kỳ</th>
-                                <th>Giá dự đoán (VNĐ)</th>
+                                <th>Giá dự đoán</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {predictions.map((pred, idx) => (
+                            {displayPreds.map((v, idx) => (
                                 <tr key={idx}>
-                                    <td>
-                                        {predictionType === "realtime" && `Phút thứ ${idx + 1}`}
-                                        {predictionType === "short-term" && `Ngày ${idx + 1}`}
-                                        {predictionType === "medium-term" && `Tháng ${idx + 1}`}
-                                        {predictionType === "long-term" && `Tháng ${idx + 1}`}
-                                    </td>
-                                    <td>{pred.toFixed(2)}</td>
+                                    <td>{idx + 1}</td>
+                                    <td>{v.toFixed(2)}</td>
                                 </tr>
                             ))}
                         </tbody>

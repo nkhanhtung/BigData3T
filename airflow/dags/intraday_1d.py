@@ -19,7 +19,7 @@ default_args = {
 }
 
 with DAG(
-    'daily_stock_crawl',
+    'intraday_1d',
     default_args=default_args,
     description='Crawl dữ liệu cuối ngày',
     schedule_interval='0 16 * * 1-5',  # 16:00 Mon-Fri

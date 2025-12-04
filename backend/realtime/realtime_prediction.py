@@ -12,6 +12,10 @@ from models.monthly_stock_price import MonthlyStockPrice
 from models.p1_stock_price import P1StockPrice
 from sqlalchemy import desc
 from fastapi import WebSocket
+from typing import List, Tuple
+import numpy as np
+from sqlalchemy import select, desc
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class ModelManager:
@@ -61,21 +65,32 @@ class ModelManager:
         return scaler
 
     
-    async def fetch_last_n_minutes(self, stock_symbol: str, n: int, db: AsyncSession) -> np.ndarray:
-        """Lấy n ngày dữ liệu close_price gần nhất"""
+    async def fetch_last_n_minutes(self, stock_symbol: str, n: int, db: AsyncSession) -> Tuple[np.ndarray, List[int]]:
+        """
+        Lấy n giá close_price gần nhất cùng timestamp.
+        Trả về:
+            closes: np.ndarray chứa giá
+            timestamps: list Unix timestamp (giây)
+        """
         query = (
-            select(P1StockPrice.close_price)
-            .where(P1StockPriceStockPrice.stock_symbol == stock_symbol)
+            select(P1StockPrice.close_price, P1StockPrice.date)
+            .where(P1StockPrice.stock_symbol == stock_symbol)
             .order_by(desc(P1StockPrice.date))
             .limit(n)
         )
         result = await db.execute(query)
-        rows: List[float] = result.scalars().all()
+        rows: List[Tuple[float, any]] = result.all()  # mỗi row = (close_price, date)
+
         if len(rows) < n:
-            raise ValueError(f"Not enough data for {symbol}, need {n} rows")
-        
-        closes = np.array(rows[::-1], dtype=np.float32)
-        return closes
+            raise ValueError(f"Not enough data for {stock_symbol}, need {n} rows")
+
+        # Đảo ngược để thứ tự tăng dần về thời gian
+        rows = rows[::-1]
+
+        closes = np.array([float(r[0]) for r in rows], dtype=np.float32)
+        timestamps = [int(r[1].timestamp()) for r in rows]  # Unix timestamp (giây)
+
+        return closes, timestamps
 
 
     async def fetch_last_n_days(self, stock_symbol: str, n: int, db: AsyncSession) -> np.ndarray:

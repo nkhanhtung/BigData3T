@@ -22,6 +22,9 @@ spark = SparkSession.builder \
     .master(f"local[{settings_spark.THREAD_SOLD}]") \
     .config("spark.sql.streaming.schemaInference", "true") \
     .config("spark.sql.shuffle.partitions", "4")  \
+    .config("spark.eventLog.enabled", "true") \
+    .config("spark.eventLog.dir", "/opt/spark/event_logs") \
+    .config("spark.history.fs.logDirectory", "/opt/spark/event_logs") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")

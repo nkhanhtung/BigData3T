@@ -24,6 +24,9 @@ logger.info("Starting Spark IndicatorAlert...")
 spark = SparkSession.builder \
     .appName(settings_spark.SPARK_APP_NAME + "_IndicatorAlert") \
     .master(f"local[{settings_spark.THREAD_SOLD}]") \
+    .config("spark.eventLog.enabled", "true") \
+    .config("spark.eventLog.dir", "/opt/spark/event_logs") \
+    .config("spark.history.fs.logDirectory", "/opt/spark/event_logs") \
     .getOrCreate()
 
 logger.info("Spark session created.")
